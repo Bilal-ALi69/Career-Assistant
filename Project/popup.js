@@ -22,7 +22,10 @@ function renderNotes(notes = []) {
   noteCount.textContent = notes.length;
 
   if (notes.length === 0) {
-    notesContainer.innerHTML = '<p class="empty-state">No notes yet. Save a highlight to get started.</p>';
+    const emptyState = document.createElement('p');
+    emptyState.className = 'empty-state';
+    emptyState.textContent = 'No notes yet. Save a highlight to get started.';
+    notesContainer.appendChild(emptyState);
     return;
   }
 
@@ -30,15 +33,24 @@ function renderNotes(notes = []) {
     const noteItem = document.createElement('article');
     noteItem.className = 'note-item';
 
-    noteItem.innerHTML = `
-      <p>${note.text}</p>
-      <div class="note-meta">
-        <span>${note.source}</span>
-        <span>${formatTimestamp(note.createdAt)}</span>
-      </div>
-      <button class="delete-note" data-index="${index}" title="Remove note">×</button>
-    `;
+    const noteText = document.createElement('p');
+    noteText.textContent = note.text;
 
+    const noteMeta = document.createElement('div');
+    noteMeta.className = 'note-meta';
+    const sourceText = document.createElement('span');
+    sourceText.textContent = note.source;
+    const timestampText = document.createElement('span');
+    timestampText.textContent = formatTimestamp(note.createdAt);
+    noteMeta.append(sourceText, timestampText);
+
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'delete-note';
+    deleteButton.dataset.index = index;
+    deleteButton.title = 'Remove note';
+    deleteButton.textContent = '×';
+
+    noteItem.append(noteText, noteMeta, deleteButton);
     notesContainer.appendChild(noteItem);
   });
 }
@@ -82,14 +94,21 @@ function getSelectedTextFromCurrentTab() {
       return;
     }
 
-    chrome.tabs.sendMessage(tab.id, { type: 'getSelection' }, (response) => {
-      if (!response || !response.selected) {
-        alert('Please highlight text on the page before saving.');
-        return;
-      }
+    chrome.scripting.executeScript(
+      {
+        target: { tabId: tab.id },
+        func: () => window.getSelection().toString().trim(),
+      },
+      (injectionResults) => {
+        const selected = injectionResults?.[0]?.result;
+        if (!selected) {
+          alert('Please highlight text on the page before saving.');
+          return;
+        }
 
-      saveNote(response.selected, new URL(tab.url || '').hostname || 'Web page');
-    });
+        saveNote(selected, new URL(tab.url || '').hostname || 'Web page');
+      }
+    );
   });
 }
 

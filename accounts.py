@@ -27,6 +27,7 @@ if not JWT_SECRET:
 
 JWT_ALGORITHM = "HS256"
 TOKEN_EXPIRY_SECONDS = int(os.getenv("TOKEN_EXPIRY_SECONDS", str(60 * 60 * 24)))
+BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS", "12"))
 
 PROFILE_DEFAULTS = {
     "hobbies": "",
@@ -113,7 +114,7 @@ def password_meets_policy(password: str) -> bool:
 
 
 def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=BCRYPT_ROUNDS)).decode()
 
 
 def verify_password(password: str, password_hash: str) -> bool:

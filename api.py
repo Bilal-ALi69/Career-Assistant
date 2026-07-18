@@ -6,10 +6,12 @@ or via CORSMiddleware below once the frontend origin is known.
 """
 
 from contextlib import asynccontextmanager
+import os
 import sqlite3
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -39,9 +41,35 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="AI Future Career Assistant API", lifespan=lifespan)
 
-limiter = Limiter(key_func=get_remote_address)
+
+def get_rate_limit_key(request: Request):
+    authorization = request.headers.get("Authorization", "")
+    if authorization.startswith("Bearer "):
+        token = authorization.split(" ", 1)[1]
+        user_id = accounts.decode_access_token(token)
+        if user_id is not None:
+            return f"user:{user_id}"
+    return get_remote_address(request)
+
+limiter = Limiter(key_func=get_rate_limit_key)
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+FRONTEND_ORIGINS = [origin.strip() for origin in os.getenv("FRONTEND_ORIGINS", "").split(",") if origin.strip()]
+if FRONTEND_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=FRONTEND_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+async def rate_limit_exception_handler(request: Request, exc: Exception):
+    if isinstance(exc, RateLimitExceeded):
+        return _rate_limit_exceeded_handler(request, exc)
+    raise exc
+
+app.add_exception_handler(RateLimitExceeded, rate_limit_exception_handler)
 
 
 @app.middleware("http")
@@ -235,12 +263,20 @@ def password_strength(request: Request, req: PasswordCheckRequest):
 
 
 @app.get("/auth/me")
+@limiter.limit("20/minute")
 def get_me(current_user=Depends(get_current_user)):
     return {"id": current_user["id"], "email": current_user["email"], "created_at": current_user["created_at"]}
 
 
 @app.delete("/auth/me", status_code=status.HTTP_204_NO_CONTENT)
-def delete_me(current_user=Depends(get_current_user), user_conn=Depends(get_user_db)):
+@limiter.limit("5/minute")
+def delete_me(
+    req: PasswordCheckRequest,
+    current_user=Depends(get_current_user),
+    user_conn=Depends(get_user_db),
+):
+    if not accounts.verify_password(req.password, current_user["password_hash"]):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
     accounts.delete_user(user_conn, current_user["id"])
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -258,6 +294,7 @@ def update_profile(
 
 
 @app.get("/auth/profile")
+@limiter.limit("20/minute")
 def get_profile(current_user=Depends(get_current_user), user_conn=Depends(get_user_db)):
     return accounts.get_user_profile_survey(user_conn, current_user["id"])
 
@@ -299,6 +336,7 @@ def personalized_recommendations(
 
 
 @app.get("/health")
+@limiter.limit("60/minute")
 def health():
     """Confirms the API is running; model availability is checked on generation."""
     return {"status": "ok"}
