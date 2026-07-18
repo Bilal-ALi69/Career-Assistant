@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Highlight Notes</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <div>
+          <h1>Highlight Notes</h1>
+          <p>Save any highlighted text as a beautiful note.</p>
+        </div>
+      </header>
+
+      <section class="actions">
+        <button id="save-highlight">Save Selected Text</button>
+        <button id="new-note">Add Manual Note</button>
+      </section>
+
+      <section id="manual-entry" class="hidden">
+        <textarea id="manual-text" placeholder="Type a note or paste your highlight..."></textarea>
+        <div class="manual-actions">
+          <button id="save-manual">Save Note</button>
+          <button id="cancel-manual" class="secondary">Cancel</button>
+        </div>
+      </section>
+
+      <section class="notes-panel">
+        <div class="notes-header">
+          <h2>Saved Notes</h2>
+          <span id="note-count">0</span>
+        </div>
+        <div id="notes" class="note-list"></div>
+      </section>
+
+      <footer>
+        <small>Highlight text on the page, then open this popup to save it.</small>
+      </footer>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
