@@ -56,6 +56,8 @@ app.add_middleware(
 
 
 def get_rate_limit_key(request: Request):
+    if request.method == "OPTIONS":
+        return None
     authorization = request.headers.get("Authorization", "")
     if authorization.startswith("Bearer "):
         token = authorization.split(" ", 1)[1]
