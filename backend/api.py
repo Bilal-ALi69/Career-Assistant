@@ -56,8 +56,6 @@ app.add_middleware(
 
 
 def get_rate_limit_key(request: Request):
-    if request.method == "OPTIONS":
-        return None
     authorization = request.headers.get("Authorization", "")
     if authorization.startswith("Bearer "):
         token = authorization.split(" ", 1)[1]
@@ -76,6 +74,23 @@ async def rate_limit_exception_handler(request: Request, exc: Exception):
     raise exc
 
 app.add_exception_handler(RateLimitExceeded, rate_limit_exception_handler)
+
+
+FRONTEND_ORIGINS_SET = set(FRONTEND_ORIGINS)
+
+@app.middleware("http")
+async def bypass_options(request: Request, call_next):
+    if request.method == "OPTIONS":
+        origin = request.headers.get("origin", "")
+        response = Response(status_code=204)
+        if origin in FRONTEND_ORIGINS_SET:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            response.headers["Access-Control-Max-Age"] = "600"
+        return response
+    return await call_next(request)
 
 
 @app.middleware("http")
