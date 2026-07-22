@@ -12,7 +12,7 @@ from spellchecker import SpellChecker
 
 DB_FILE = Path(__file__).with_name("career_cache.db")
 EMBED_MODEL = "mxbai-embed-large"
-GEN_MODEL = "gpt-oss:120b-cloud"
+GEN_MODEL = "gpt-oss:20b-cloud"
 TRAIT_SIMILARITY_THRESHOLD = 0.85
 
 class GenerationCancelled(Exception):
