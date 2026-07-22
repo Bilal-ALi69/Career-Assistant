@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career Assistant</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/core.css">
+  <style>
+    :root {
+      --bg-color: #000000;
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --accent-mint: #00F5A0;
+      --accent-emerald: #10B981;
+      --text-main: #FFFFFF;
+      --text-muted: #A1A1AA;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Geist Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* 1. Sticky Ribbon Header */
+    .top-ribbon {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      box-sizing: border-box;
+      z-index: 999;
+      backdrop-filter: blur(25px) saturate(190%);
+      -webkit-backdrop-filter: blur(25px) saturate(190%);
+      background: rgba(0, 0, 0, 0.7);
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .ribbon-left {
+      width: 300px;
+      display: flex;
+      align-items: center;
+    }
+
+    /* The target container where the header title will shrink into */
+    .ribbon-title-target {
+      font-size: 1.5rem;
+      font-weight: 700;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .ribbon-title-target.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Cycling Banner Container */
+    .banner-container {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-right: 24px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .cycling-text {
+      transition: opacity 0.2s ease-in-out;
+    }
+
+    .sign-in-btn {
+      background: #FFFFFF;
+      color: #000000;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 99px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+      will-change: transform;
+      transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .sign-in-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* 2. Main Canvas Hero Title */
+    .main-hero {
+      max-width: 1200px;
+      margin: 140px auto 40px auto;
+      padding: 0 40px;
+      transition: opacity 0.2s ease;
+    }
+
+    .main-hero h1 {
+      font-size: 4.5rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin: 0;
+    }
+
+    .main-hero span.gradient-text {
+      background: linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-mint) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* 3. Input Component Layouts */
+    .matrix-grid {
+      max-width: 1200px;
+      margin: 0 auto 100px auto;
+      padding: 0 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .glass-input-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .glass-input-card h3 {
+      margin: 0 0 16px 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .glass-input-card textarea {
+      width: 100%;
+      height: 100px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--text-main);
+      font-family: inherit;
+      resize: none;
+      box-sizing: border-box;
+      font-size: 1rem;
+    }
+
+    .glass-input-card textarea:focus {
+      outline: none;
+      border-color: var(--accent-mint);
+    }
+
+    /* Action Trigger */
+    .action-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 40px 60px 40px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .action-circle-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(135deg, var(--accent-mint) 0%, var(--accent-emerald) 100%);
+      color: #000000;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 99px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0, 245, 160, 0.25);
+      will-change: transform;
+      transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .action-circle-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* 4. Premium Job Presentation Row Cards (From Your Reference Image) */
+    .results-container {
+      max-width: 1200px;
+      margin: 40px auto 120px auto;
+      padding: 0 40px;
+    }
+
+    .job-row-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .job-header-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .job-title-group h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+    }
+
+    .match-pill {
+      background: rgba(0, 245, 160, 0.1);
+      border: 1px solid rgba(0, 245, 160, 0.3);
+      color: var(--theme-mint);
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .compensation-box {
+      text-align: right;
+    }
+
+    .compensation-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .compensation-val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .job-justification {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      margin: 16px 0 0 0;
+    }
+
+    /* 5. Mobile Floating Bottom Navigation Pill */
+    .bottom-nav-pill {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 20, 20, 0.6);
+      backdrop-filter: blur(30px) saturate(200%);
+      -webkit-backdrop-filter: blur(30px) saturate(200%);
+      border: 1px solid var(--glass-border);
+      padding: 8px;
+      border-radius: 99px;
+      display: flex;
+      gap: 4px;
+      z-index: 1000;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      display: none; /* Hidden until authenticated & generated */
+    }
+
+    .nav-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 12px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .nav-tab.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .top-ribbon { padding: 0 20px; }
+      .banner-container { display: none; }
+      .main-hero h1 { font-size: 2.8rem; }
+      .job-header-line { flex-direction: column; gap: 16px; }
+      .compensation-box { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sticky Top Ribbon -->
+  <header class="top-ribbon">
+    <div class="ribbon-left">
+      <div class="ribbon-title-target" id="ribbonTitle">Career Assistant</div>
+    </div>
+    <div class="banner-container">
+      <span class="cycling-text" id="bannerText">Create an account to save unlimited roadmaps</span>
+    </div>
+    <button class="sign-in-btn" id="signInBtn">Sign In</button>
+  </header>
+
+  <!-- Hero Anchor Title -->
+  <section class="main-hero" id="heroSection">
+    <h1 id="mainTitle"><span class="gradient-text">Career</span> Assistant</h1>
+  </section>
+
+  <!-- Dynamic Categories Form Matrix -->
+  <main class="matrix-grid" id="inputMatrix">
+    <!-- Rendered dynamically by JavaScript based on Auth status -->
+  </main>
+
+  <!-- Primary Trigger -->
+  <div class="action-container" id="actionWrapper">
+    <button class="action-circle-btn" id="generateBtn" onclick="triggerGeneration()">
+      <span>(Give Suggestions)</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+
+  <!-- Job Rows Container -->
+  <section class="results-container" id="resultsView" style="display: none;"></section>
+
+  <!-- Floating Nav Pill (Mobile layout strategy context) -->
+  <nav class="bottom-nav-pill" id="bottomNav">
+    <button class="nav-tab active" onclick="switchTab('jobs')">Jobs</button>
+    <button class="nav-tab" onclick="switchTab('matrix')">Matrix</button>
+    <button class="nav-tab" onclick="switchTab('account')">Account</button>
+  </nav>
+
+  <script>
+    // System Configurations & Data Schemas
+    let isAuthenticated = false; 
+    let initialGenerationDone = false;
+
+    const anonymousFields = ['strengths', 'weaknesses', 'interests'];
+    const authenticatedFields = [
+      'strengths', 'weaknesses', 'interests', 'hobbies', 'disabilities', 
+      'country', 'education', 'qualifications', 'work_experience', 
+      'medical_conditions', 'preferred_work_environments', 'work_preference', 
+      'weekly_availability', 'career_goals', 'background_constraints'
+    ];
+
+    const advantages = [
+      "Save unlimited strategic roadmaps permanently",
+      "Unlock deep multi-variant profile metrics",
+      "Get hardware-isolated priority AI processing",
+      "Track complex milestones and timeline vectors",
+      "Export low-level industry compliance data",
+      "Sync telemetry graphs across all mobile environments"
+    ];
+
+    // Initialize UI Layout
+    function renderInputs() {
+      const container = document.getElementById('inputMatrix');
+      container.innerHTML = '';
+      const targets = isAuthenticated ? authenticatedFields : anonymousFields;
+      
+      targets.forEach(field => {
+        const title = field.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        container.innerHTML += `
+          <div class="glass-input-card">
+            <h3>${title}</h3>
+            <textarea id="input_${field}" placeholder="Describe your ${title.toLowerCase()}..."></textarea>
+          </div>
+        `;
+      });
+    }
+
+    // 10-Advantage Ribbon Loop (Cycling every 3 seconds)
+    let bannerIdx = 0;
+    setInterval(() => {
+      const banner = document.getElementById('bannerText');
+      if (!banner) return;
+      banner.style.opacity = '0';
+      setTimeout(() => {
+        bannerIdx = (bannerIdx + 1) % advantages.length;
+        banner.innerText = advantages[bannerIdx];
+        banner.style.opacity = '1';
+      }, 200);
+    }, 3000);
+
+    // Scroll Interceptor: Dynamic Title Shrinking Engine
+    window.addEventListener('scroll', () => {
+      const ribbonTitle = document.getElementById('ribbonTitle');
+      const mainTitle = document.getElementById('mainTitle');
+      const scrollY = window.scrollY;
+
+      if (scrollY > 60) {
+        ribbonTitle.classList.add('visible');
+        mainTitle.style.opacity = '0';
+      } else {
+        ribbonTitle.classList.remove('visible');
+        mainTitle.style.opacity = '1';
+      }
+    });
+
+    // Native Device Haptic Trigger (12ms Premium Tick)
+    function triggerHaptic() {
+      if (navigator.vibrate) {
+        navigator.vibrate(12);
+      }
+    }
+
+    // Connect to FastAPI Core Engine & Render Apple Style Cards
+    async function triggerGeneration() {
+      triggerHaptic();
+      
+      // Collect Dynamic Form States
+      const payload = {};
+      const fields = isAuthenticated ? authenticatedFields : anonymousFields;
+      fields.forEach(f => {
+        payload[f] = document.getElementById(`input_${f}`)?.value || "";
+      });
+
+      // Endpoint Routing Selection Logic
+      const endpoint = isAuthenticated ? '/recommendations/personalized' : '/recommendations';
+      
+      // Simulate/Execute Call out to api.py backend
+      // In production use real headers: const res = await fetch(`http://localhost:8000${endpoint}`, ...);
+      
+      initialGenerationDone = true;
+      if (isAuthenticated) {
+        document.getElementById('bottomNav').style.display = 'flex';
+      }
+
+      // Render the response exactly matching the bold, high-contrast layouts
+      const resultsView = document.getElementById('resultsView');
+      resultsView.innerHTML = `
+        <div class="job-row-card">
+          <div class="job-header-line">
+            <div class="job-title-group">
+              <span class="match-pill">98% Match</span>
+              <h2>Chief Strategy Officer</h2>
+            </div>
+            <div class="compensation-box">
+              <div class="compensation-label">Est. Compensation</div>
+              <div class="compensation-val">$280k - $340k</div>
+            </div>
+          </div>
+          <p class="job-justification">Your comprehensive history in system optimization and local infrastructure design directly parallels the target architecture patterns. The scale matches perfectly with your declared background constraints.</p>
+        </div>
+      `;
+      resultsView.style.display = 'block';
+      resultsView.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Auth Simulation Event Hook
+    document.getElementById('signInBtn').addEventListener('click', () => {
+      triggerHaptic();
+      isAuthenticated = !isAuthenticated;
+      document.getElementById('signInBtn').innerText = isAuthenticated ? "Sign Out" : "Sign In";
+      renderInputs();
+      if (isAuthenticated && initialGenerationDone) {
+        document.getElementById('bottomNav').style.display = 'flex';
+      } else {
+        document.getElementById('bottomNav').style.display = 'none';
+      }
+    });
+
+    // Init Execution on Boot
+    renderInputs();
+  </script>
+</body>
+</html>

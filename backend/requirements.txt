@@ -8,4 +8,5 @@ email-validator>=2,<3
 numpy>=2,<3
 ollama>=0.6,<1
 pyspellchecker>=0.9,<1
+dnspython>=2.7,<3
 requests>=2.32,<3

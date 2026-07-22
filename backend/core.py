@@ -15,6 +15,10 @@ EMBED_MODEL = "mxbai-embed-large"
 GEN_MODEL = "llama3"
 TRAIT_SIMILARITY_THRESHOLD = 0.85
 
+class GenerationCancelled(Exception):
+    """Raised when a user cancels mid-generation."""
+
+
 MIN_JOBS = 4
 SPELLCHECK_CONFIDENCE_THRESHOLD = 0.85
 SPELLCHECK_WHITELIST = {
@@ -367,7 +371,7 @@ def sanitize_job(job: dict) -> dict:
     }
 
 
-def generate_job_list(strengths: str, weaknesses: str, interests: str) -> list[dict]:
+def generate_job_list(strengths: str, weaknesses: str, interests: str, cancel_event=None) -> list[dict]:
     system_role = (
         "You are a career-matching engine for students seeking entry-level or "
         "student-friendly jobs. Respond with ONLY valid JSON, no markdown, no extra "
@@ -382,17 +386,27 @@ def generate_job_list(strengths: str, weaknesses: str, interests: str) -> list[d
     )
     user_prompt = f"Strengths: {strengths}\nWeaknesses: {weaknesses}\nInterests: {interests}"
 
-    response = ollama.chat(
+    chunks = []
+    stream = ollama.chat(
         model=GEN_MODEL,
         format="json",
         messages=[
             {"role": "system", "content": system_role},
             {"role": "user", "content": user_prompt},
         ],
+        stream=True,
     )
+    for chunk in stream:
+        if cancel_event is not None and cancel_event.is_set():
+            raise GenerationCancelled()
+        text = chunk.get("message", {}).get("content", "")
+        if text:
+            chunks.append(text)
+
+    raw = "".join(chunks)
 
     try:
-        raw_jobs = json.loads(response["message"]["content"]).get("jobs", [])
+        raw_jobs = json.loads(raw).get("jobs", [])
     except json.JSONDecodeError:
         raw_jobs = []
 
@@ -421,6 +435,19 @@ PROFILE_FIELD_LABELS = {
     "weekly_availability": "Weekly availability",
     "career_goals": "Career goals",
     "background_constraints": "Background constraints",
+    "date_of_birth": "Date of birth",
+    "gender": "Gender",
+    "current_address": "Current address or location",
+    "languages": "Languages spoken",
+    "linkedin_url": "LinkedIn profile URL",
+    "portfolio_url": "Portfolio or personal website URL",
+    "preferred_industries": "Preferred industries",
+    "extracurriculars": "Extracurricular activities or volunteer work",
+    "willing_to_relocate": "Willing to relocate (yes/no/where)",
+    "salary_expectations": "Salary expectations",
+    "notice_period": "Notice period or availability to start",
+    "values": "Personal or workplace values",
+    "work_authorization": "Work authorization status",
     "education_level": "Education level (legacy profile field)",
     "location": "Location (legacy profile field)",
 }
@@ -440,6 +467,7 @@ def generate_personalized_job_list(
     weaknesses: str,
     interests: str,
     profile: dict[str, str],
+    cancel_event=None,
 ) -> list[dict]:
     profile_context = format_profile_context(profile)
     system_role = (
@@ -448,7 +476,8 @@ def generate_personalized_job_list(
         "commentary, matching exactly this shape:\n"
         '{"jobs": [\n'
         '  {"title": "string", "description": "string, 1-2 sentences", '
-        '"confidence": integer 0-100, "justification": "string, 1 sentence"}\n'
+        '"confidence": integer 0-100, "justification": "string, 1 sentence", '
+        '"salary": "string, estimated annual income in USD, e.g. $45k-$60k/yr"}\n'
         ']}\n'
         f"Provide AT LEAST {MIN_JOBS} jobs, ranked from HIGHEST to LOWEST confidence. "
         "Tailor every recommendation to the user's personal background constraints. "
@@ -456,7 +485,10 @@ def generate_personalized_job_list(
         "given their education, experience, location, availability, goals, and other "
         "constraints. Confidence reflects how well each job fits the full profile. "
         "Justification must connect strengths, weaknesses, and background constraints "
-        "in one clear sentence."
+        "in one clear sentence. "
+        "For salary, estimate a realistic annual income range for the role based on "
+        "the user's location and the job's typical market rate. Use the user's salary "
+        "expectations as a reference if provided."
     )
     user_prompt = (
         f"Strengths: {strengths}\n"
@@ -465,17 +497,27 @@ def generate_personalized_job_list(
         f"Personal background:\n{profile_context}"
     )
 
-    response = ollama.chat(
+    chunks = []
+    stream = ollama.chat(
         model=GEN_MODEL,
         format="json",
         messages=[
             {"role": "system", "content": system_role},
             {"role": "user", "content": user_prompt},
         ],
+        stream=True,
     )
+    for chunk in stream:
+        if cancel_event is not None and cancel_event.is_set():
+            raise GenerationCancelled()
+        text = chunk.get("message", {}).get("content", "")
+        if text:
+            chunks.append(text)
+
+    raw = "".join(chunks)
 
     try:
-        raw_jobs = json.loads(response["message"]["content"]).get("jobs", [])
+        raw_jobs = json.loads(raw).get("jobs", [])
     except json.JSONDecodeError:
         raw_jobs = []
 
@@ -493,7 +535,7 @@ def generate_personalized_job_list(
 
 # --------------------------------------------------------------------- Core
 
-def get_baseline_recommendations(conn, strengths: str, weaknesses: str, interests: str) -> dict:
+def get_baseline_recommendations(conn, strengths: str, weaknesses: str, interests: str, cancel_event=None) -> dict:
     """Resolve traits against the relational cache; zero LLM calls on full cache hit."""
     strengths, weaknesses, interests = strengths.strip(), weaknesses.strip(), interests.strip()
 
@@ -507,7 +549,7 @@ def get_baseline_recommendations(conn, strengths: str, weaknesses: str, interest
         if cached_jobs:
             return {"source": "cache", "similarity": TRAIT_SIMILARITY_THRESHOLD, "jobs": cached_jobs}
 
-    jobs = generate_job_list(strengths, weaknesses, interests)
+    jobs = generate_job_list(strengths, weaknesses, interests, cancel_event=cancel_event)
     persist_generated_jobs(conn, strength_ids, weakness_ids, interest_ids, jobs)
     return {"source": "generated", "similarity": None, "jobs": jobs}
 
@@ -517,10 +559,11 @@ def get_personalized_career_advice(
     weaknesses: str,
     interests: str,
     profile: dict[str, str],
+    cancel_event=None,
 ) -> dict:
     """Single-pass personalized recommendations — never reads from or writes to cache."""
     strengths, weaknesses, interests = strengths.strip(), weaknesses.strip(), interests.strip()
-    jobs = generate_personalized_job_list(strengths, weaknesses, interests, profile)
+    jobs = generate_personalized_job_list(strengths, weaknesses, interests, profile, cancel_event=cancel_event)
     return {"source": "personalized", "similarity": None, "jobs": jobs}
 
 

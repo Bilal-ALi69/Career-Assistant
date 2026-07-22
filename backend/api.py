@@ -8,6 +8,7 @@ or via CORSMiddleware below once the frontend origin is known.
 from contextlib import asynccontextmanager
 import os
 import sqlite3
+import threading
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
@@ -41,6 +42,18 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="AI Future Career Assistant API", lifespan=lifespan)
 
+FRONTEND_ORIGINS = [origin.strip() for origin in os.getenv("FRONTEND_ORIGINS", "").split(",") if origin.strip()]
+if not FRONTEND_ORIGINS:
+    FRONTEND_ORIGINS = ["http://localhost:5173"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=FRONTEND_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 def get_rate_limit_key(request: Request):
     authorization = request.headers.get("Authorization", "")
@@ -54,15 +67,6 @@ def get_rate_limit_key(request: Request):
 limiter = Limiter(key_func=get_rate_limit_key)
 app.state.limiter = limiter
 
-FRONTEND_ORIGINS = [origin.strip() for origin in os.getenv("FRONTEND_ORIGINS", "").split(",") if origin.strip()]
-if FRONTEND_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=FRONTEND_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
 
 async def rate_limit_exception_handler(request: Request, exc: Exception):
     if isinstance(exc, RateLimitExceeded):
@@ -116,20 +120,43 @@ def get_current_user(
     return user
 
 
-def run_recommendation(action, *args):
-    """Avoid exposing internals when the local model service is unavailable."""
+_cancel_events: dict[int, threading.Event] = {}
+
+
+def _get_cancel_event(user_id: int | None) -> threading.Event | None:
+    if user_id is None:
+        return None
+    return _cancel_events.get(user_id)
+
+
+def run_recommendation(action, *args, user_id=None):
+    """Run an Ollama generation with streaming-based cancellation support.
+
+    The cancel_event is passed through to core.py which checks it between
+    streaming chunks.  When cancelled, the Ollama HTTP connection is closed
+    immediately, stopping the server from continuing generation.
+    """
+    cancel_event = threading.Event()
+    if user_id is not None:
+        _cancel_events[user_id] = cancel_event
+
     try:
-        return action(*args)
+        return action(*args, cancel_event=cancel_event)
+    except core.GenerationCancelled:
+        raise HTTPException(status_code=499, detail="Generation cancelled")
     except (ollama.RequestError, ollama.ResponseError):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="The recommendation service is temporarily unavailable.",
         )
+    finally:
+        if user_id is not None:
+            _cancel_events.pop(user_id, None)
 
 
 ShortText = Annotated[str, Field(min_length=1, max_length=500)]
 ProfileText = Annotated[str, Field(default="", max_length=1_000)]
-Password = Annotated[str, Field(min_length=12, max_length=128)]
+Password = Annotated[str, Field(min_length=8, max_length=128)]
 PasswordForCheck = Annotated[str, Field(min_length=0, max_length=128)]
 
 # Keep a bounded resolver so a broken DNS server cannot tie up registration
@@ -157,6 +184,19 @@ class ProfileSurveyRequest(APIModel):
     weekly_availability: ProfileText = ""
     career_goals: ProfileText = ""
     background_constraints: ProfileText = ""
+    date_of_birth: ProfileText = ""
+    gender: ProfileText = ""
+    current_address: ProfileText = ""
+    languages: ProfileText = ""
+    linkedin_url: ProfileText = ""
+    portfolio_url: ProfileText = ""
+    preferred_industries: ProfileText = ""
+    extracurriculars: ProfileText = ""
+    willing_to_relocate: ProfileText = ""
+    salary_expectations: ProfileText = ""
+    notice_period: ProfileText = ""
+    values: ProfileText = ""
+    work_authorization: ProfileText = ""
     # Backwards-compatible names accepted from the existing sample client.
     education_level: ProfileText = ""
     location: ProfileText = ""
@@ -190,6 +230,19 @@ class PersonalizedRecommendationRequest(RecommendationRequest):
     weekly_availability: ProfileText = ""
     career_goals: ProfileText = ""
     background_constraints: ProfileText = ""
+    date_of_birth: ProfileText = ""
+    gender: ProfileText = ""
+    current_address: ProfileText = ""
+    languages: ProfileText = ""
+    linkedin_url: ProfileText = ""
+    portfolio_url: ProfileText = ""
+    preferred_industries: ProfileText = ""
+    extracurriculars: ProfileText = ""
+    willing_to_relocate: ProfileText = ""
+    salary_expectations: ProfileText = ""
+    notice_period: ProfileText = ""
+    values: ProfileText = ""
+    work_authorization: ProfileText = ""
 
     def submitted_profile_fields(self) -> dict[str, str]:
         profile_fields = set(accounts.PROFILE_SURVEY_FIELDS)
@@ -264,13 +317,14 @@ def password_strength(request: Request, req: PasswordCheckRequest):
 
 @app.get("/auth/me")
 @limiter.limit("20/minute")
-def get_me(current_user=Depends(get_current_user)):
+def get_me(request: Request, current_user=Depends(get_current_user)):
     return {"id": current_user["id"], "email": current_user["email"], "created_at": current_user["created_at"]}
 
 
 @app.delete("/auth/me", status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("5/minute")
 def delete_me(
+    request: Request,
     req: PasswordCheckRequest,
     current_user=Depends(get_current_user),
     user_conn=Depends(get_user_db),
@@ -295,7 +349,7 @@ def update_profile(
 
 @app.get("/auth/profile")
 @limiter.limit("20/minute")
-def get_profile(current_user=Depends(get_current_user), user_conn=Depends(get_user_db)):
+def get_profile(request: Request, current_user=Depends(get_current_user), user_conn=Depends(get_user_db)):
     return accounts.get_user_profile_survey(user_conn, current_user["id"])
 
 
@@ -322,21 +376,43 @@ def personalized_recommendations(
     user_conn=Depends(get_user_db),
     cache_conn=Depends(get_cache_db),
 ):
-    profile = accounts.get_user_profile_survey(user_conn, current_user["id"])
+    user_id = current_user["id"]
+    profile = accounts.get_user_profile_survey(user_conn, user_id)
     # Explicit request values override saved values without silently storing
     # sensitive information submitted only for this recommendation.
     profile.update(req.submitted_profile_fields())
     if not accounts.has_active_profile_survey(profile):
         return run_recommendation(
-            core.get_baseline_recommendations, cache_conn, req.strengths, req.weaknesses, req.interests
+            core.get_baseline_recommendations, cache_conn, req.strengths, req.weaknesses, req.interests,
+            user_id=user_id,
         )
     return run_recommendation(
-        core.get_personalized_career_advice, req.strengths, req.weaknesses, req.interests, profile
+        core.get_personalized_career_advice, req.strengths, req.weaknesses, req.interests, profile,
+        user_id=user_id,
     )
+
+
+@app.post("/recommendations/cancel")
+@limiter.limit("30/minute")
+def cancel_recommendation(
+    request: Request,
+    current_user=Depends(get_current_user),
+):
+    user_id = current_user["id"]
+    event = _cancel_events.get(user_id)
+    if event:
+        event.set()
+    return {"status": "cancelled"}
 
 
 @app.get("/health")
 @limiter.limit("60/minute")
-def health():
+def health(request: Request):
     """Confirms the API is running; model availability is checked on generation."""
     return {"status": "ok"}
+
+
+'''from fastapi.staticfiles import StaticFiles
+
+# Mount after your other API endpoints
+app.mount("/", StaticFiles(directory="static", html=True), name="static")'''

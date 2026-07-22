@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+}
+
+/* ── Modal / overlay animations ── */
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes modalOut {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to   { opacity: 0; transform: scale(0.95) translateY(8px); }
+}
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes overlayOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ── Dropdown / popover animations ── */
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes dropOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-8px) scale(0.96); }
+}
+
+/* ── Slide-in from right (side panels) ── */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Generic fade + lift ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeOutDown {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(10px); }
+}
+
+/* ── Smooth scale pop (for buttons, tags) ── */
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.8); }
+  70%  { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Utility classes ── */
+.animate-modal-in {
+  animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-modal-out {
+  animation: modalOut 0.18s ease-in forwards;
+}
+.animate-overlay-in {
+  animation: overlayIn 0.2s ease-out forwards;
+}
+.animate-overlay-out {
+  animation: overlayOut 0.15s ease-in forwards;
+}
+.animate-drop-in {
+  animation: dropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-drop-out {
+  animation: dropOut 0.14s ease-in forwards;
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-fade-out-down {
+  animation: fadeOutDown 0.18s ease-in forwards;
+}
+.animate-pop-in {
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
