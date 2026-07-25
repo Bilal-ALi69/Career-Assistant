@@ -44,7 +44,13 @@ app = FastAPI(title="AI Future Career Assistant API", lifespan=lifespan)
 
 FRONTEND_ORIGINS = [origin.strip() for origin in os.getenv("FRONTEND_ORIGINS", "").split(",") if origin.strip()]
 if not FRONTEND_ORIGINS:
-    FRONTEND_ORIGINS = ["http://localhost:5173"]
+    FRONTEND_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+else:
+    # Always allow the local Vite host variants if one is present.
+    if "http://localhost:5173" in FRONTEND_ORIGINS and "http://127.0.0.1:5173" not in FRONTEND_ORIGINS:
+        FRONTEND_ORIGINS.append("http://127.0.0.1:5173")
+    if "http://127.0.0.1:5173" in FRONTEND_ORIGINS and "http://localhost:5173" not in FRONTEND_ORIGINS:
+        FRONTEND_ORIGINS.append("http://localhost:5173")
 
 app.add_middleware(
     CORSMiddleware,

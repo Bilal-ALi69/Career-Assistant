@@ -1,7 +1,8 @@
 /* ---------------------------------------------------------
    API CONFIG — point this at your running FastAPI backend
 --------------------------------------------------------- */
-export const API_BASE = "http://127.0.0.1:8000";
+const DEFAULT_API_BASE = "http://127.0.0.1:8000";
+export const API_BASE = import.meta.env.VITE_API_BASE || DEFAULT_API_BASE;
 
 function authHeaders(token) {
   const headers = { "Content-Type": "application/json" };

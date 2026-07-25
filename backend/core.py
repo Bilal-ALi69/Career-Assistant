@@ -12,7 +12,7 @@ from spellchecker import SpellChecker
 
 DB_FILE = Path(__file__).with_name("career_cache.db")
 EMBED_MODEL = "mxbai-embed-large"
-GEN_MODEL = "gpt-oss:20b-cloud"
+GEN_MODEL = "gpt-oss:120b-cloud"
 TRAIT_SIMILARITY_THRESHOLD = 0.85
 
 class GenerationCancelled(Exception):
@@ -168,9 +168,9 @@ def parse_trait_tokens(text: str) -> list[str]:
     return parts or [text]
 
 
-def _find_semantic_match(rows, query_embedding: np.ndarray) -> tuple[int | None, str | None, float]:
+def _find_semantic_match(rows, query_embedding: np.ndarray) -> tuple[int | None, str, float]:
     best_id = None
-    best_name = None
+    best_name = ""
     best_score = -1.0
 
     for row in rows:

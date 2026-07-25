@@ -17,13 +17,16 @@ load_dotenv()
 
 USER_DB_FILE = Path(__file__).with_name("user_data.db")
 
-JWT_SECRET = os.getenv("JWT_SECRET")
-if not JWT_SECRET:
+jwt_secret = os.getenv("JWT_SECRET")
+if not jwt_secret:
     raise RuntimeError(
         "JWT_SECRET is not set. Create a .env file in this folder with a line like:\n"
         "JWT_SECRET=<random value>\n"
         "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
     )
+# The guard above guarantees this is a str. The explicit annotation keeps
+# static type checkers from treating the signing key as ``str | None``.
+JWT_SECRET: str = jwt_secret
 
 JWT_ALGORITHM = "HS256"
 TOKEN_EXPIRY_SECONDS = int(os.getenv("TOKEN_EXPIRY_SECONDS", str(60 * 60 * 24)))
