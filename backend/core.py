@@ -12,11 +12,16 @@ import ollama
 from spellchecker import SpellChecker
 
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "")
 ollama_client = ollama.Client(host=OLLAMA_HOST)
+cloud_client = ollama.Client(
+    host="https://ollama.com",
+    headers={"Authorization": f"Bearer {OLLAMA_API_KEY}"} if OLLAMA_API_KEY else {},
+)
 
 DB_FILE = Path(__file__).with_name("career_cache.db")
 EMBED_MODEL = "all-minilm"
-GEN_MODEL = "gpt-oss:120b-cloud"
+GEN_MODEL = "gpt-oss:120b"
 TRAIT_SIMILARITY_THRESHOLD = 0.85
 
 class GenerationCancelled(Exception):
@@ -444,7 +449,7 @@ def generate_job_list(strengths: str, weaknesses: str, interests: str, cancel_ev
     user_prompt = f"Strengths: {strengths}\nWeaknesses: {weaknesses}\nInterests: {interests}"
 
     chunks = []
-    stream = ollama_client.chat(
+    stream = cloud_client.chat(
         model=GEN_MODEL,
         format="json",
         messages=[
@@ -578,7 +583,7 @@ def generate_personalized_job_list(
     )
 
     chunks = []
-    stream = ollama_client.chat(
+    stream = cloud_client.chat(
         model=GEN_MODEL,
         format="json",
         messages=[
@@ -684,7 +689,7 @@ def generate_regenerated_job_list(
     user_prompt = "\n".join(user_lines)
 
     chunks = []
-    stream = ollama_client.chat(
+    stream = cloud_client.chat(
         model=GEN_MODEL,
         format="json",
         messages=[
@@ -802,7 +807,7 @@ def generate_workday_summary(job_title: str, job_description: str, cancel_event=
     user_prompt = f"Job title: {job_title}\nJob description: {job_description}"
 
     chunks = []
-    stream = ollama_client.chat(
+    stream = cloud_client.chat(
         model=GEN_MODEL,
         messages=[
             {"role": "system", "content": system_role},
