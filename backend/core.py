@@ -15,7 +15,7 @@ OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
 ollama_client = ollama.Client(host=OLLAMA_HOST)
 
 DB_FILE = Path(__file__).with_name("career_cache.db")
-EMBED_MODEL = "mxbai-embed-large"
+EMBED_MODEL = "all-minilm"
 GEN_MODEL = "gpt-oss:120b-cloud"
 TRAIT_SIMILARITY_THRESHOLD = 0.85
 
