@@ -17,7 +17,7 @@ export default function PasswordInput({ label, value, onChange, tokens, classNam
           value={value}
           onChange={onChange}
           className={cx(
-            "w-full rounded-lg border px-3.5 py-2.5 pr-10 text-sm outline-none focus:border-blue-500 transition-colors",
+            "w-full rounded-lg border px-3.5 py-2.5 pr-10 text-sm outline-none focus:border-[var(--accent-500)] transition-colors",
             tokens.input
           )}
           {...rest}

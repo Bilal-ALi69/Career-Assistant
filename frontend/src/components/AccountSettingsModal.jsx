@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Loader2, X } from "lucide-react";
 import PasswordInput from "./PasswordInput";
 import PasswordStrengthMeter from "./PasswordStrengthMeter";
-import { changePassword, setTwoFactor, updateProfile } from "../lib/api";
+import CustomSelect from "./CustomSelect";
+import CustomCheckbox from "./CustomCheckbox";
+import { changePassword, setTwoFactor, updateProfile, ApiError } from "../lib/api";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
@@ -10,7 +12,7 @@ function ModalShell({ dark, tokens, title, onClose, children }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 animate-overlay-in" onClick={onClose}>
       <div
-        className={cx("w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-modal-in", dark ? "bg-[#0F1526] border border-slate-800" : "bg-white border border-gray-200")}
+        className={cx("w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-modal-in", dark ? "bg-[#2f2f2e] border border-zinc-800" : "bg-[#f8fafc] border border-[#e2e8f0]")}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
@@ -28,7 +30,7 @@ function ModalShell({ dark, tokens, title, onClose, children }) {
 function PrimaryButton({ children, disabled, tone = "primary", className = "", ...rest }) {
   const toneClasses = tone === "danger"
     ? "bg-red-600 hover:bg-red-500 shadow-red-600/20"
-    : "bg-blue-600 hover:bg-blue-500 shadow-blue-600/20";
+    : "bg-[var(--accent-600)] hover:bg-[var(--accent-500)] shadow-[var(--accent-600)]/20";
   return (
     <button
       disabled={disabled}
@@ -66,7 +68,7 @@ export function ChangePasswordModal({ dark, tokens, token, onClose }) {
       setDone(true);
       setTimeout(onClose, 1200);
     } catch (err) {
-      setError(err.message || "Couldn't change your password.");
+      setError(err instanceof ApiError ? err.userMessage : (err.message || "Couldn't change your password."));
     } finally {
       setLoading(false);
     }
@@ -110,7 +112,7 @@ export function TwoFactorModal({ dark, tokens, token, enabled, onClose, onChange
       onChanged(!enabled);
       onClose();
     } catch (err) {
-      setError(err.message || "Couldn't update two-factor authentication.");
+      setError(err instanceof ApiError ? err.userMessage : (err.message || "Couldn't update two-factor authentication."));
     } finally {
       setLoading(false);
     }
@@ -160,9 +162,14 @@ export function LanguageModal({ dark, tokens, onClose }) {
   return (
     <ModalShell dark={dark} tokens={tokens} title="Language" onClose={onClose}>
       <label className={cx("block text-xs font-medium mb-1.5", tokens.textMuted)}>App Language</label>
-      <select disabled value="English" className={cx("w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none", tokens.input)}>
-        <option>English</option>
-      </select>
+      <CustomSelect
+        value="English"
+        onChange={() => {}}
+        options={[{ value: "English", label: "English" }]}
+        disabled
+        dark={dark}
+        tokens={tokens}
+      />
       <p className={cx("text-xs mt-3", tokens.textFaint)}>
         More languages are on the way — English is the only option for now.
       </p>
@@ -190,7 +197,7 @@ export function EmailPreferencesModal({ dark, tokens, token, profile, onClose, o
       onSaved(prefs);
       onClose();
     } catch (err) {
-      setError(err.message || "Couldn't save your email preferences.");
+      setError(err instanceof ApiError ? err.userMessage : (err.message || "Couldn't save your email preferences."));
     } finally {
       setLoading(false);
     }
@@ -199,14 +206,8 @@ export function EmailPreferencesModal({ dark, tokens, token, profile, onClose, o
   return (
     <ModalShell dark={dark} tokens={tokens} title="Email Preferences" onClose={onClose}>
       <div className="space-y-3 mb-4">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={jobAlerts} onChange={(e) => setJobAlerts(e.target.checked)} />
-          <span className={tokens.text}>Job match alerts</span>
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={productUpdates} onChange={(e) => setProductUpdates(e.target.checked)} />
-          <span className={tokens.text}>Product updates</span>
-        </label>
+        <CustomCheckbox checked={jobAlerts} onChange={setJobAlerts} label="Job match alerts" dark={dark} tokens={tokens} />
+        <CustomCheckbox checked={productUpdates} onChange={setProductUpdates} label="Product updates" dark={dark} tokens={tokens} />
       </div>
       {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
       <PrimaryButton onClick={submit} disabled={loading}>

@@ -1,7 +1,88 @@
 @import "tailwindcss";
 
+:root {
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #2563eb;
+  --accent-900: #1e3a5a;
+  --accent-rgb: 59,130,246;
+}
+
+[data-accent="blue"] {
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #2563eb;
+  --accent-900: #1e3a5a;
+  --accent-rgb: 59,130,246;
+}
+[data-accent="green"] {
+  --accent-50: #ecfdf5;
+  --accent-100: #d1fae5;
+  --accent-200: #a7f3d0;
+  --accent-400: #34d399;
+  --accent-500: #10b981;
+  --accent-600: #059669;
+  --accent-900: #064e3b;
+  --accent-rgb: 16,185,129;
+}
+[data-accent="gold"] {
+  --accent-50: #fffbeb;
+  --accent-100: #fef3c7;
+  --accent-200: #fde68a;
+  --accent-400: #fbbf24;
+  --accent-500: #f59e0b;
+  --accent-600: #d97706;
+  --accent-900: #78350f;
+  --accent-rgb: 245,158,11;
+}
+[data-accent="purple"] {
+  --accent-50: #faf5ff;
+  --accent-100: #f3e8ff;
+  --accent-200: #e9d5ff;
+  --accent-400: #c084fc;
+  --accent-500: #a855f7;
+  --accent-600: #9333ea;
+  --accent-900: #581c87;
+  --accent-rgb: 168,85,247;
+}
+[data-accent="rose"] {
+  --accent-50: #fff1f2;
+  --accent-100: #ffe4e6;
+  --accent-200: #fecdd3;
+  --accent-400: #fb7185;
+  --accent-500: #f43f5e;
+  --accent-600: #e11d48;
+  --accent-900: #881337;
+  --accent-rgb: 244,63,94;
+}
+[data-accent="teal"] {
+  --accent-50: #f0fdfa;
+  --accent-100: #ccfbf1;
+  --accent-200: #99f6e4;
+  --accent-400: #2dd4bf;
+  --accent-500: #14b8a6;
+  --accent-600: #0d9488;
+  --accent-900: #134e4a;
+  --accent-rgb: 20,184,166;
+}
+
 body {
   margin: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+html {
+  scrollbar-width: none;
 }
 
 /* ── Modal / overlay animations ── */
@@ -85,4 +166,129 @@ body {
 }
 .animate-pop-in {
   animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ── "Already on page" tooltip flash ── */
+@keyframes tipFlash {
+  0%   { transform: scale(1); filter: brightness(1); }
+  20%  { transform: scale(1.28); filter: brightness(1.4); }
+  45%  { transform: scale(0.95); filter: brightness(1.15); }
+  65%  { transform: scale(1.08); filter: brightness(1.2); }
+  85%  { transform: scale(0.98); filter: brightness(1.05); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.animate-tip-flash {
+  animation: tipFlash 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ── Job card expand / collapse ── */
+@keyframes cardBlastOpen {
+  0%   { opacity: 0; transform: scale(0.85) translateY(20px); }
+  50%  { opacity: 1; transform: scale(1.03) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes cardCollapse {
+  0%   { opacity: 1; transform: scale(1) translateY(0); }
+  100% { opacity: 0; transform: scale(0.9) translateY(12px); }
+}
+@keyframes overlayFadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to   { opacity: 1; backdrop-filter: blur(8px); }
+}
+@keyframes overlayFadeOut {
+  from { opacity: 1; backdrop-filter: blur(8px); }
+  to   { opacity: 0; backdrop-filter: blur(0px); }
+}
+@keyframes slideReveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-card-blast {
+  animation: cardBlastOpen 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.animate-card-collapse {
+  animation: cardCollapse 0.25s ease-in forwards;
+}
+.animate-overlay-blur {
+  animation: overlayFadeIn 0.35s ease-out forwards;
+}
+.animate-overlay-unblur {
+  animation: overlayFadeOut 0.2s ease-in forwards;
+}
+.animate-slide-reveal {
+  animation: slideReveal 0.35s 0.15s ease-out forwards;
+  opacity: 0;
+}
+
+/* ── Logo pulse dot ── */
+@keyframes logoPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.85); }
+}
+.animate-logo-pulse {
+  animation: logoPulse 2.4s ease-in-out infinite;
+}
+
+/* ── Skeleton pulse ── */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 0.7; }
+}
+
+.skeleton {
+  background-color: rgba(113, 113, 122, 0.15);
+  border-radius: 0.5rem;
+  animation: skeletonPulse 2s ease-in-out infinite;
+}
+
+/* ── Accordion expand/collapse ── */
+.accordion-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.accordion-content.open {
+  grid-template-rows: 1fr;
+}
+.accordion-content > div {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.accordion-content.open > div {
+  overflow: visible;
+  opacity: 1;
+  transition: opacity 0.3s ease 0.08s;
+}
+
+/* ── Toast slide-in from right ── */
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes toastSlideOut {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(24px) scale(0.96); }
+}
+.animate-toast-in {
+  animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-toast-out {
+  animation: toastSlideOut 0.18s ease-in forwards;
+}
+
+/* ── Page / section entrance ── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-page-enter {
+  animation: pageEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-overlay-blur {
+  animation: overlayFadeIn 0.35s ease-out forwards;
 }

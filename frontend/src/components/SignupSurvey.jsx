@@ -46,7 +46,7 @@ export default function SignupSurvey({ dark, tokens, onComplete, onSkip, submitt
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-8 animate-overlay-in">
-      <div className={cx("w-full max-w-xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-modal-in", dark ? "bg-[#0F1526] border border-slate-800" : "bg-white border border-gray-200")}>
+      <div className={cx("w-full max-w-xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-modal-in", dark ? "bg-[#2f2f2e] border border-zinc-800" : "bg-[#f8fafc] border border-[#e2e8f0]")}>
         {/* Progress */}
         <div className="px-6 pt-6">
           <div className="flex items-center gap-1.5">
@@ -55,7 +55,7 @@ export default function SignupSurvey({ dark, tokens, onComplete, onSkip, submitt
                 key={s.key}
                 className={cx(
                   "h-1.5 flex-1 rounded-full transition-colors duration-300",
-                  i < stepIndex ? "bg-blue-500" : i === stepIndex ? "bg-blue-500/60" : dark ? "bg-slate-800" : "bg-gray-200"
+                  i < stepIndex ? "bg-[var(--accent-500)]" : i === stepIndex ? "bg-[var(--accent-500)]/60" : dark ? "bg-zinc-800" : "bg-[#e2e8f0]"
                 )}
               />
             ))}
@@ -66,7 +66,7 @@ export default function SignupSurvey({ dark, tokens, onComplete, onSkip, submitt
         {/* Header */}
         <div className="px-6 pt-4 pb-2">
           <div className="flex items-center gap-2.5">
-            <div className={cx("h-9 w-9 rounded-xl flex items-center justify-center", dark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600")}>
+            <div className={cx("h-9 w-9 rounded-xl flex items-center justify-center", dark ? "bg-[var(--accent-500)]/10 text-[var(--accent-400)]" : "bg-[var(--accent-50)] text-[var(--accent-600)]")}>
               <step.icon size={17} />
             </div>
             <div>
@@ -79,7 +79,7 @@ export default function SignupSurvey({ dark, tokens, onComplete, onSkip, submitt
         {/* Fields */}
         <div className="px-6 py-4 overflow-y-auto space-y-4">
           {step.fields.map((f) => (
-            <ProfileField key={f.key} field={f} value={data[f.key]} onChange={setValue} tokens={tokens} />
+            <ProfileField key={f.key} field={f} value={data[f.key]} onChange={setValue} tokens={tokens} dark={dark} />
           ))}
           {submitError && isLast && (
             <p className="text-xs text-red-500">{submitError}</p>
@@ -98,7 +98,7 @@ export default function SignupSurvey({ dark, tokens, onComplete, onSkip, submitt
             {!isFirst && (
               <button
                 onClick={back}
-                className={cx("inline-flex items-center gap-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors", dark ? "text-slate-300 hover:bg-slate-800/60" : "text-slate-600 hover:bg-gray-100")}
+                className={cx("inline-flex items-center gap-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors", dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-600 hover:bg-[#f1f5f9]")}
               >
                 <ChevronLeft size={14} /> Back
               </button>
@@ -106,7 +106,7 @@ export default function SignupSurvey({ dark, tokens, onComplete, onSkip, submitt
             <button
               onClick={next}
               disabled={requiredMissing || submitting}
-              className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold bg-[var(--accent-600)] hover:bg-[var(--accent-500)] text-white shadow-lg shadow-[var(--accent-600)]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {submitting ? (
                 <><Loader2 size={14} className="animate-spin" /> Saving…</>

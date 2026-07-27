@@ -143,6 +143,14 @@ def get_current_user(
     return user
 
 
+def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_scheme),
+):
+    if credentials is None:
+        return None
+    return accounts.decode_access_token(credentials.credentials)
+
+
 _cancel_events: dict[int, threading.Event] = {}
 
 
@@ -152,7 +160,7 @@ def _get_cancel_event(user_id: int | None) -> threading.Event | None:
     return _cancel_events.get(user_id)
 
 
-def run_recommendation(action, *args, user_id=None):
+def run_recommendation(action, *args, user_id=None, **extra_kwargs):
     """Run an Ollama generation with streaming-based cancellation support.
 
     The cancel_event is passed through to core.py which checks it between
@@ -164,7 +172,7 @@ def run_recommendation(action, *args, user_id=None):
         _cancel_events[user_id] = cancel_event
 
     try:
-        return action(*args, cancel_event=cancel_event)
+        return action(*args, cancel_event=cancel_event, **extra_kwargs)
     except core.GenerationCancelled:
         raise HTTPException(status_code=499, detail="Generation cancelled")
     except (ollama.RequestError, ollama.ResponseError):
@@ -220,6 +228,7 @@ class ProfileSurveyRequest(APIModel):
     notice_period: ProfileText = ""
     values: ProfileText = ""
     work_authorization: ProfileText = ""
+    accent_color: ProfileText = "gold"
     # Backwards-compatible names accepted from the existing sample client.
     education_level: ProfileText = ""
     location: ProfileText = ""
@@ -233,6 +242,16 @@ class RecommendationRequest(APIModel):
     strengths: ShortText
     weaknesses: ShortText
     interests: ShortText
+
+
+class WorkdayRequest(APIModel):
+    job_title: ShortText
+    job_description: str = Field(default="", max_length=500)
+
+
+class RegenerateRequest(RecommendationRequest):
+    """Same traits as a normal recommendation request."""
+    pass
 
 
 class PersonalizedRecommendationRequest(RecommendationRequest):
@@ -426,6 +445,40 @@ def cancel_recommendation(
     if event:
         event.set()
     return {"status": "cancelled"}
+
+
+@app.post("/recommendations/workday")
+@limiter.limit("20/minute")
+def workday_summary(request: Request, req: WorkdayRequest, conn=Depends(get_cache_db)):
+    return run_recommendation(
+        core.get_workday_summary, req.job_title, req.job_description, conn=conn
+    )
+
+
+@app.post("/recommendations/regenerate")
+@limiter.limit("10/minute")
+def regenerate_recommendations(
+    request: Request,
+    req: RegenerateRequest,
+    current_user=Depends(get_current_user_optional),
+    user_conn=Depends(get_user_db),
+    cache_conn=Depends(get_cache_db),
+):
+    profile = None
+    user_id = current_user
+    if user_id is not None:
+        saved = accounts.get_user_profile_survey(user_conn, user_id)
+        if accounts.has_active_profile_survey(saved):
+            profile = saved
+    return run_recommendation(
+        core.get_regenerated_recommendations,
+        cache_conn,
+        req.strengths,
+        req.weaknesses,
+        req.interests,
+        profile,
+        user_id=user_id,
+    )
 
 
 @app.get("/health")

@@ -76,7 +76,7 @@ export default function PasswordStrengthMeter({ password, dark, tokens, minLengt
             key={i}
             className={cx(
               "h-1.5 flex-1 rounded-full transition-colors duration-300",
-              i <= score ? BAR_COLORS[score] : dark ? "bg-slate-800" : "bg-gray-200"
+              i <= score ? BAR_COLORS[score] : dark ? "bg-zinc-800" : "bg-[#e2e8f0]"
             )}
           />
         ))}

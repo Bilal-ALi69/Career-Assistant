@@ -10,6 +10,41 @@ function authHeaders(token) {
   return headers;
 }
 
+/* ---------------------------------------------------------
+   ERROR HANDLING — structured ApiError with status codes
+--------------------------------------------------------- */
+
+export class ApiError extends Error {
+  constructor(message, status, detail) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.detail = detail;
+  }
+
+  get isNetworkError() { return this.status === 0; }
+  get isTimeout() { return this.name === "AbortError" || this.message.toLowerCase().includes("timeout"); }
+  get isUnauthorized() { return this.status === 401; }
+  get isForbidden() { return this.status === 403; }
+  get isNotFound() { return this.status === 404; }
+  get isValidationError() { return this.status === 422; }
+  get isRateLimited() { return this.status === 429; }
+  get isServerError() { return this.status >= 500; }
+  get isServiceUnavailable() { return this.status === 503; }
+
+  get userMessage() {
+    if (this.isNetworkError) return "Unable to connect. Please check your internet connection and try again.";
+    if (this.isTimeout) return "The request took too long. Please try again.";
+    if (this.isUnauthorized) return "Your session has expired. Please sign in again.";
+    if (this.isForbidden) return "You don't have permission to perform this action.";
+    if (this.isNotFound) return "The requested resource was not found.";
+    if (this.isRateLimited) return "Too many requests. Please wait a moment and try again.";
+    if (this.isServiceUnavailable) return "The service is temporarily unavailable. Please try again in a moment.";
+    if (this.isServerError) return "Something went wrong on our end. Please try again later.";
+    return this.message;
+  }
+}
+
 function formatErrorDetail(detail) {
   if (!detail) return null;
   if (typeof detail === "string") return detail;
@@ -23,9 +58,28 @@ async function parseOrThrow(res) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = formatErrorDetail(data.detail) || data.message || `Request failed (${res.status})`;
-    throw new Error(msg);
+    throw new ApiError(msg, res.status, data.detail);
   }
   return data;
+}
+
+/* ---------------------------------------------------------
+   TIMEOUT UTILITY — wraps a fetch promise with a timeout
+--------------------------------------------------------- */
+
+function withTimeout(fetchFn, ms = 30000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ms);
+
+  return {
+    run: (signal) => {
+      if (signal) {
+        signal.addEventListener("abort", () => controller.abort(), { once: true });
+      }
+      return fetchFn(controller.signal).finally(() => clearTimeout(timeoutId));
+    },
+    cancel: () => { clearTimeout(timeoutId); controller.abort(); },
+  };
 }
 
 /* ---------------------------------------------------------
@@ -159,5 +213,34 @@ export async function cancelRecommendation(token) {
     method: "POST",
     headers: authHeaders(token),
   });
-  return parseOrThrow(res).catch(() => {});
+  return parseOrThrow(res);
+}
+
+export async function fetchWorkdaySummary(jobTitle, jobDescription) {
+  const timeout = withTimeout(
+    (signal) => fetch(`${API_BASE}/recommendations/workday`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ job_title: jobTitle, job_description: jobDescription }),
+      signal,
+    }),
+    60000,
+  );
+  const res = await timeout.run();
+  return parseOrThrow(res);
+}
+
+export async function fetchRegeneratedRecommendations({ signedIn, token, formValues, signal }) {
+  const body = {
+    strengths: formValues?.strengths || "",
+    weaknesses: formValues?.weaknesses || "",
+    interests: formValues?.interests || "",
+  };
+  const res = await fetch(`${API_BASE}/recommendations/regenerate`, {
+    method: "POST",
+    headers: authHeaders(signedIn ? token : null),
+    body: JSON.stringify(body),
+    signal,
+  });
+  return parseOrThrow(res);
 }

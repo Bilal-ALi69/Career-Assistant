@@ -58,6 +58,7 @@ PROFILE_DEFAULTS = {
     "notice_period": "",
     "values": "",
     "work_authorization": "",
+    "accent_color": "gold",
     # Kept so profiles saved by the previous API version remain readable.
     "education_level": "",
     "location": "",
@@ -66,7 +67,7 @@ PROFILE_SURVEY_FIELDS = tuple(PROFILE_DEFAULTS)
 
 
 def get_user_connection():
-    conn = sqlite3.connect(USER_DB_FILE, timeout=10)
+    conn = sqlite3.connect(USER_DB_FILE, timeout=10, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")

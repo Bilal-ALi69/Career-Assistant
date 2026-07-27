@@ -4,13 +4,16 @@
    If accounts.py grows a real saved-jobs table, swap these two
    functions for API calls and everything else (App.jsx, JobsPage,
    MyJobsPage) keeps working unchanged.
+   Scoped per user via their email.
 --------------------------------------------------------- */
 
-const STORAGE_KEY = "career_assistant_saved_jobs";
+function keyFor(email) {
+  return `career_assistant_saved_jobs__${email || "_anon"}`;
+}
 
-export function loadSavedJobs() {
+export function loadSavedJobs(email) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(keyFor(email));
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -18,9 +21,9 @@ export function loadSavedJobs() {
   }
 }
 
-export function persistSavedJobs(jobs) {
+export function persistSavedJobs(jobs, email) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+    localStorage.setItem(keyFor(email), JSON.stringify(jobs));
   } catch {
     /* storage unavailable / quota exceeded — saving silently no-ops */
   }

@@ -66,7 +66,7 @@ def spellcheck_text(text: str) -> dict:
 def get_connection():
     # Connections are short-lived per request (see api.py).  Do not share one
     # connection between FastAPI worker threads.
-    conn = sqlite3.connect(DB_FILE, timeout=10)
+    conn = sqlite3.connect(DB_FILE, timeout=10, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
@@ -129,6 +129,16 @@ def init_db(conn):
                 PRIMARY KEY (job_id, interest_id),
                 FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
                 FOREIGN KEY (interest_id) REFERENCES interests(id) ON DELETE CASCADE
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS workday_summaries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_title TEXT NOT NULL,
+                job_description TEXT NOT NULL,
+                summary TEXT NOT NULL,
+                created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+                UNIQUE(job_title, job_description)
             )
         ''')
 
@@ -336,6 +346,12 @@ def fetch_linked_jobs(
                 "Matched your strengths, weaknesses, and interests against stored career paths "
                 "in the knowledge base."
             ),
+            "estimated_salary": "—",
+            "match_breakdown": [
+                "Your traits match this role's known requirements from our career database.",
+                "This role consistently appears for candidates with similar profiles.",
+            ],
+            "action_tags": ["Knowledge Base Match", "Verified Path"],
         }
         for row in rows
     ]
@@ -362,12 +378,37 @@ def sanitize_confidence(value) -> int:
     return max(0, min(100, round(conf)))
 
 
+def sanitize_match_breakdown(value) -> list[str]:
+    if not isinstance(value, list):
+        return ["Match based on your provided traits.", "This role aligns with your interests."]
+    bullets = []
+    for item in value[:2]:
+        if isinstance(item, str) and item.strip():
+            bullets.append(item.strip()[:120])
+    while len(bullets) < 2:
+        bullets.append("This role aligns with your interests.")
+    return bullets
+
+
+def sanitize_action_tags(value) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    tags = []
+    for item in value[:3]:
+        if isinstance(item, str) and item.strip():
+            tags.append(item.strip()[:40])
+    return tags
+
+
 def sanitize_job(job: dict) -> dict:
     return {
         "title": sanitize_text(job.get("title"), "Unspecified Role", 60),
         "description": sanitize_text(job.get("description"), "No description provided.", 220),
         "confidence": sanitize_confidence(job.get("confidence")),
         "justification": sanitize_text(job.get("justification"), "No justification provided.", 160),
+        "estimated_salary": sanitize_text(job.get("estimated_salary"), "—", 40),
+        "match_breakdown": sanitize_match_breakdown(job.get("match_breakdown")),
+        "action_tags": sanitize_action_tags(job.get("action_tags")),
     }
 
 
@@ -378,11 +419,23 @@ def generate_job_list(strengths: str, weaknesses: str, interests: str, cancel_ev
         "commentary, matching exactly this shape:\n"
         '{"jobs": [\n'
         '  {"title": "string", "description": "string, 1-2 sentences", '
-        '"confidence": integer 0-100, "justification": "string, 1 sentence"}\n'
+        '"confidence": integer 0-100, "justification": "string, 1 sentence", '
+        '"estimated_salary": "string, e.g. $45k-$60k/yr", '
+        '"match_breakdown": ["string — short bullet explaining why this matches", '
+        '"string — second short bullet explaining another match reason"], '
+        '"action_tags": ["string — e.g. Remote, High Stress, Python", '
+        '"string — e.g. Team-Oriented, Fast-Paced", '
+        '"string — e.g. Entry Level"]}\n'
         ']}\n'
         f"Provide AT LEAST {MIN_JOBS} jobs, ranked from HIGHEST to LOWEST confidence. "
         "Confidence reflects how well the job matches the given strengths, weaknesses, "
-        "and interests. Justification must explain the score in one clear sentence."
+        "and interests. Justification must explain the score in one clear sentence. "
+        "For estimated_salary, provide a realistic annual income range in USD. "
+        "match_breakdown must contain exactly 2 short bullets explaining how the "
+        "candidate's traits connect to this role — avoid jargon, be specific. "
+        "action_tags must contain exactly 2-3 short tags describing the work "
+        "environment, required tools/skills, stress level, or work style — "
+        "e.g. 'Remote', 'Python', 'High Stress', 'Team-Oriented', 'Entry Level'."
     )
     user_prompt = f"Strengths: {strengths}\nWeaknesses: {weaknesses}\nInterests: {interests}"
 
@@ -417,6 +470,12 @@ def generate_job_list(strengths: str, weaknesses: str, interests: str, cancel_ev
             "description": "A broad starting role suited to building foundational experience.",
             "confidence": 50,
             "justification": "Fallback suggestion — the model returned fewer options than required.",
+            "estimated_salary": "—",
+            "match_breakdown": [
+                "A broad entry-level role that fits many skill combinations.",
+                "Good starting point for building foundational experience.",
+            ],
+            "action_tags": ["Entry Level", "Versatile"],
         }))
     jobs.sort(key=lambda job: job["confidence"], reverse=True)
     return jobs
@@ -470,6 +529,15 @@ def generate_personalized_job_list(
     cancel_event=None,
 ) -> list[dict]:
     profile_context = format_profile_context(profile)
+    country = (profile.get("country") or "").strip()
+    salary_instruction = (
+        f"For estimated_salary, estimate a realistic annual income range for the role "
+        f"using the currency of the user's country ({country}). "
+        "Use the user's salary expectations as a reference if provided."
+        if country
+        else "For estimated_salary, estimate a realistic annual income range in USD. "
+        "Use the user's salary expectations as a reference if provided."
+    )
     system_role = (
         "You are a career-matching engine for students seeking entry-level or "
         "student-friendly jobs. Respond with ONLY valid JSON, no markdown, no extra "
@@ -477,7 +545,12 @@ def generate_personalized_job_list(
         '{"jobs": [\n'
         '  {"title": "string", "description": "string, 1-2 sentences", '
         '"confidence": integer 0-100, "justification": "string, 1 sentence", '
-        '"salary": "string, estimated annual income in USD, e.g. $45k-$60k/yr"}\n'
+        '"estimated_salary": "string, e.g. $45k-$60k/yr or PKR 800k-1.2M/yr", '
+        '"match_breakdown": ["string — short bullet explaining why this matches", '
+        '"string — second short bullet explaining another match reason"], '
+        '"action_tags": ["string — e.g. Remote, High Stress, Python", '
+        '"string — e.g. Team-Oriented, Fast-Paced", '
+        '"string — e.g. Entry Level"]}\n'
         ']}\n'
         f"Provide AT LEAST {MIN_JOBS} jobs, ranked from HIGHEST to LOWEST confidence. "
         "Tailor every recommendation to the user's personal background constraints. "
@@ -486,9 +559,12 @@ def generate_personalized_job_list(
         "constraints. Confidence reflects how well each job fits the full profile. "
         "Justification must connect strengths, weaknesses, and background constraints "
         "in one clear sentence. "
-        "For salary, estimate a realistic annual income range for the role based on "
-        "the user's location and the job's typical market rate. Use the user's salary "
-        "expectations as a reference if provided."
+        "match_breakdown must contain exactly 2 short bullets explaining how the "
+        "candidate's traits connect to this role — avoid jargon, be specific. "
+        "action_tags must contain exactly 2-3 short tags describing the work "
+        "environment, required tools/skills, stress level, or work style — "
+        "e.g. 'Remote', 'Python', 'High Stress', 'Team-Oriented', 'Entry Level'. "
+        + salary_instruction
     )
     user_prompt = (
         f"Strengths: {strengths}\n"
@@ -528,12 +604,140 @@ def generate_personalized_job_list(
             "description": "A broad starting role suited to building foundational experience.",
             "confidence": 50,
             "justification": "Fallback suggestion — the model returned fewer options than required.",
+            "estimated_salary": "—",
+            "match_breakdown": [
+                "A broad entry-level role that fits many skill combinations.",
+                "Good starting point for building foundational experience.",
+            ],
+            "action_tags": ["Entry Level", "Versatile"],
         }))
     jobs.sort(key=lambda job: job["confidence"], reverse=True)
     return jobs
 
 
-# --------------------------------------------------------------------- Core
+def generate_regenerated_job_list(
+    strengths: str,
+    weaknesses: str,
+    interests: str,
+    profile: dict[str, str] | None = None,
+    cancel_event=None,
+) -> list[dict]:
+    """Ask the LLM again with an explicit instruction that the prior set was unsatisfactory."""
+    is_personalized = bool(profile)
+    if is_personalized:
+        profile_context = format_profile_context(profile)
+        country = (profile.get("country") or "").strip()
+        salary_instruction = (
+            f"For estimated_salary, estimate a realistic annual income range for the role "
+            f"using the currency of the user's country ({country}). "
+            "Use the user's salary expectations as a reference if provided."
+            if country
+            else "For estimated_salary, estimate a realistic annual income range in USD. "
+            "Use the user's salary expectations as a reference if provided."
+        )
+    else:
+        salary_instruction = "For estimated_salary, provide a realistic annual income range in USD. "
+
+    system_role = (
+        "You are a career-matching engine. The user already received a set of job "
+        "suggestions but found them unsatisfactory. You must generate a COMPLETELY "
+        "DIFFERENT set of career recommendations. Do NOT repeat any job titles from a "
+        "previous generation. Think laterally — suggest roles from adjacent or less "
+        "obvious fields that still match the candidate's profile. "
+        "Respond with ONLY valid JSON, no markdown, no extra commentary, matching "
+        "exactly this shape:\n"
+        '{"jobs": [\n'
+        '  {"title": "string", "description": "string, 1-2 sentences", '
+        '"confidence": integer 0-100, "justification": "string, 1 sentence", '
+        '"estimated_salary": "string, e.g. $45k-$60k/yr", '
+        '"match_breakdown": ["string — short bullet explaining why this matches", '
+        '"string — second short bullet explaining another match reason"], '
+        '"action_tags": ["string — e.g. Remote, High Stress, Python", '
+        '"string — e.g. Team-Oriented, Fast-Paced", '
+        '"string — e.g. Entry Level"]}\n'
+        ']}\n'
+        f"Provide AT LEAST {MIN_JOBS} jobs, ranked from HIGHEST to LOWEST confidence. "
+        "Every title MUST be different from what was already suggested. "
+        "Confidence reflects how well the job matches the given strengths, weaknesses, "
+        "and interests. Justification must explain the score in one clear sentence. "
+        "match_breakdown must contain exactly 2 short bullets explaining how the "
+        "candidate's traits connect to this role — avoid jargon, be specific. "
+        "action_tags must contain exactly 2-3 short tags describing the work "
+        "environment, required tools/skills, stress level, or work style — "
+        "e.g. 'Remote', 'Python', 'High Stress', 'Team-Oriented', 'Entry Level'. "
+        + salary_instruction
+    )
+
+    user_lines = [
+        "IMPORTANT: The previous set of suggestions did not satisfy the user. "
+        "Generate an entirely new and different set of career options.",
+        f"Strengths: {strengths}",
+        f"Weaknesses: {weaknesses}",
+        f"Interests: {interests}",
+    ]
+    if is_personalized:
+        user_lines.append(f"Personal background:\n{profile_context}")
+    user_prompt = "\n".join(user_lines)
+
+    chunks = []
+    stream = ollama.chat(
+        model=GEN_MODEL,
+        format="json",
+        messages=[
+            {"role": "system", "content": system_role},
+            {"role": "user", "content": user_prompt},
+        ],
+        stream=True,
+    )
+    for chunk in stream:
+        if cancel_event is not None and cancel_event.is_set():
+            raise GenerationCancelled()
+        text = chunk.get("message", {}).get("content", "")
+        if text:
+            chunks.append(text)
+
+    raw = "".join(chunks)
+
+    try:
+        raw_jobs = json.loads(raw).get("jobs", [])
+    except json.JSONDecodeError:
+        raw_jobs = []
+
+    jobs = [sanitize_job(job) for job in raw_jobs if isinstance(job, dict)]
+    while len(jobs) < MIN_JOBS:
+        jobs.append(sanitize_job({
+            "title": "General Entry-Level Role",
+            "description": "A broad starting role suited to building foundational experience.",
+            "confidence": 50,
+            "justification": "Fallback suggestion — the model returned fewer options than required.",
+            "estimated_salary": "—",
+            "match_breakdown": [
+                "A broad entry-level role that fits many skill combinations.",
+                "Good starting point for building foundational experience.",
+            ],
+            "action_tags": ["Entry Level", "Versatile"],
+        }))
+    jobs.sort(key=lambda job: job["confidence"], reverse=True)
+    return jobs
+
+
+def get_regenerated_recommendations(
+    conn,
+    strengths: str,
+    weaknesses: str,
+    interests: str,
+    profile: dict[str, str] | None = None,
+    cancel_event=None,
+) -> dict:
+    """Always call the LLM with a regeneration prompt — no cache lookup."""
+    strengths, weaknesses, interests = strengths.strip(), weaknesses.strip(), interests.strip()
+
+    if profile:
+        jobs = generate_regenerated_job_list(strengths, weaknesses, interests, profile=profile, cancel_event=cancel_event)
+        return {"source": "regenerated", "similarity": None, "jobs": jobs}
+
+    jobs = generate_regenerated_job_list(strengths, weaknesses, interests, cancel_event=cancel_event)
+    return {"source": "regenerated", "similarity": None, "jobs": jobs}
 
 def get_baseline_recommendations(conn, strengths: str, weaknesses: str, interests: str, cancel_event=None) -> dict:
     """Resolve traits against the relational cache; zero LLM calls on full cache hit."""
@@ -569,3 +773,68 @@ def get_personalized_career_advice(
 
 def get_career_advice(conn, strengths: str, weaknesses: str, interests: str) -> dict:
     return get_baseline_recommendations(conn, strengths, weaknesses, interests)
+
+
+# ------------------------------------------------------------- Workday Sim
+
+def generate_workday_summary(job_title: str, job_description: str, cancel_event=None) -> str:
+    system_role = (
+        "You are a career advisor generating a realistic workday summary.\n\n"
+        "FORMAT — follow this structure EXACTLY:\n"
+        "Morning Kickoff:\n- task\n- task\n\n"
+        "Mid-Day Sync:\n- task\n- task\n\n"
+        "Afternoon Execution:\n- task\n- task\n\n"
+        "Late-Day Wrap-Up:\n- task\n- task\n\n"
+        "Evening Wind-Down:\n- task\n- task\n\n"
+        "RULES:\n"
+        "- Use EXACTLY these 5 phase headings: Morning Kickoff, Mid-Day Sync, Afternoon Execution, Late-Day Wrap-Up, Evening Wind-Down.\n"
+        "- Each heading must end with a colon.\n"
+        "- Under each heading, list 2-4 tasks as bullet points starting with '- '.\n"
+        "- Keep each bullet concise (one sentence max).\n"
+        "- Mention concrete tasks, tools, meetings, and interactions relevant to the role.\n"
+        "- Do NOT use markdown, headers (#), bold, or any other formatting.\n"
+        "- Do NOT add an introduction or conclusion — output ONLY the 5 phases above."
+    )
+    user_prompt = f"Job title: {job_title}\nJob description: {job_description}"
+
+    chunks = []
+    stream = ollama.chat(
+        model=GEN_MODEL,
+        messages=[
+            {"role": "system", "content": system_role},
+            {"role": "user", "content": user_prompt},
+        ],
+        stream=True,
+    )
+    for chunk in stream:
+        if cancel_event is not None and cancel_event.is_set():
+            raise GenerationCancelled()
+        text = chunk.get("message", {}).get("content", "")
+        if text:
+            chunks.append(text)
+
+    return "".join(chunks).strip() or "Workday details are not available at this time."
+
+
+def get_workday_summary(job_title: str, job_description: str, cancel_event=None, conn=None) -> dict:
+    if conn is not None:
+        row = conn.execute(
+            "SELECT summary FROM workday_summaries WHERE job_title = ? AND job_description = ?",
+            (job_title, job_description),
+        ).fetchone()
+        if row:
+            return {"title": job_title, "summary": row["summary"]}
+
+    summary = generate_workday_summary(job_title, job_description, cancel_event=cancel_event)
+
+    if conn is not None:
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO workday_summaries (job_title, job_description, summary) VALUES (?, ?, ?)",
+                (job_title, job_description, summary),
+            )
+            conn.commit()
+        except Exception:
+            pass
+
+    return {"title": job_title, "summary": summary}
