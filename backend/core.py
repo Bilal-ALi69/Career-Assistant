@@ -160,6 +160,14 @@ def get_embedding(text: str) -> np.ndarray:
     return np.array(response["embedding"], dtype=np.float32)
 
 
+def get_embeddings_batch(texts: list[str]) -> list[np.ndarray]:
+    """Fetch embeddings for multiple texts in a single API call."""
+    if not texts:
+        return []
+    response = ollama_client.embed(model=EMBED_MODEL, input=texts)
+    return [np.array(vec, dtype=np.float32) for vec in response["embeddings"]]
+
+
 def embedding_to_blob(vector: np.ndarray) -> bytes:
     return vector.astype(np.float32).tobytes()
 
@@ -239,16 +247,58 @@ def resolve_trait(conn, text: str, table: str) -> tuple[int, str, bool]:
 
 
 def resolve_traits(conn, text: str, table: str) -> tuple[list[int], list[str], bool]:
-    """Resolve every trait token; returns whether every token was pre-existing."""
-    ids: list[int] = []
-    names: list[str] = []
+    """Resolve every trait token; returns whether every token was pre-existing.
+
+    Batches all embedding calls into a single API request for performance.
+    """
+    if table not in {"strengths", "weaknesses", "interests"}:
+        raise ValueError(f"Unsupported trait table: {table}")
+
+    tokens = parse_trait_tokens(text)
+    if not tokens:
+        return [], [], True
+
+    ids: list[int | None] = [None] * len(tokens)
+    names: list[str] = [""] * len(tokens)
+    need_embedding: list[tuple[int, str]] = []
+
+    for i, token in enumerate(tokens):
+        token_text = token.strip()
+        if not token_text:
+            raise ValueError("Trait text must not be empty")
+        exact = conn.execute(
+            f"SELECT id, name FROM {table} WHERE name = ?",
+            (token_text,),
+        ).fetchone()
+        if exact:
+            ids[i] = exact["id"]
+            names[i] = exact["name"]
+        else:
+            need_embedding.append((i, token_text))
+
     all_existing = True
 
-    for token in parse_trait_tokens(text):
-        trait_id, name, was_existing = resolve_trait(conn, token, table)
-        ids.append(trait_id)
-        names.append(name)
-        all_existing = all_existing and was_existing
+    if need_embedding:
+        texts_to_embed = [t for _, t in need_embedding]
+        embeddings = get_embeddings_batch(texts_to_embed)
+
+        rows = conn.execute(f"SELECT id, name, embedding FROM {table}").fetchall()
+
+        for (idx, token_text), embedding in zip(need_embedding, embeddings):
+            best_id, best_name, best_score = _find_semantic_match(rows, embedding)
+
+            if best_id is not None and best_score >= TRAIT_SIMILARITY_THRESHOLD:
+                ids[idx] = best_id
+                names[idx] = best_name
+            else:
+                with conn:
+                    cursor = conn.execute(
+                        f"INSERT INTO {table} (name, embedding) VALUES (?, ?)",
+                        (token_text, embedding_to_blob(embedding)),
+                    )
+                ids[idx] = cursor.lastrowid
+                names[idx] = token_text
+                all_existing = False
 
     return ids, names, all_existing
 
