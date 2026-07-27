@@ -13,11 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN chmod +x start.sh
 
-RUN ollama serve & \
-    sleep 5 && \
-    ollama pull mxbai-embed-large && \
-    kill %1 2>/dev/null; true
-
 EXPOSE 8000
 
 CMD ["./start.sh"]
