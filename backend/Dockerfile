@@ -7,13 +7,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
 WORKDIR /app
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN ollama serve & sleep 3 && ollama pull mxbai-embed-large && pkill ollama
-
-COPY . .
+COPY backend/ .
 RUN chmod +x start.sh
+
+RUN ollama serve & \
+    sleep 5 && \
+    ollama pull mxbai-embed-large && \
+    kill %1 2>/dev/null; true
 
 EXPOSE 8000
 
