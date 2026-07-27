@@ -2,6 +2,7 @@
 No input()/print() here; this module just does work and returns data."""
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 from difflib import SequenceMatcher
@@ -9,6 +10,9 @@ from difflib import SequenceMatcher
 import numpy as np
 import ollama
 from spellchecker import SpellChecker
+
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
+ollama_client = ollama.Client(host=OLLAMA_HOST)
 
 DB_FILE = Path(__file__).with_name("career_cache.db")
 EMBED_MODEL = "mxbai-embed-large"
@@ -147,7 +151,7 @@ def init_db(conn):
 
 def get_embedding(text: str) -> np.ndarray:
     """Fetch a vector embedding for the given text via Ollama."""
-    response = ollama.embeddings(model=EMBED_MODEL, prompt=text)
+    response = ollama_client.embeddings(model=EMBED_MODEL, prompt=text)
     return np.array(response["embedding"], dtype=np.float32)
 
 
@@ -440,7 +444,7 @@ def generate_job_list(strengths: str, weaknesses: str, interests: str, cancel_ev
     user_prompt = f"Strengths: {strengths}\nWeaknesses: {weaknesses}\nInterests: {interests}"
 
     chunks = []
-    stream = ollama.chat(
+    stream = ollama_client.chat(
         model=GEN_MODEL,
         format="json",
         messages=[
@@ -574,7 +578,7 @@ def generate_personalized_job_list(
     )
 
     chunks = []
-    stream = ollama.chat(
+    stream = ollama_client.chat(
         model=GEN_MODEL,
         format="json",
         messages=[
@@ -680,7 +684,7 @@ def generate_regenerated_job_list(
     user_prompt = "\n".join(user_lines)
 
     chunks = []
-    stream = ollama.chat(
+    stream = ollama_client.chat(
         model=GEN_MODEL,
         format="json",
         messages=[
@@ -798,7 +802,7 @@ def generate_workday_summary(job_title: str, job_description: str, cancel_event=
     user_prompt = f"Job title: {job_title}\nJob description: {job_description}"
 
     chunks = []
-    stream = ollama.chat(
+    stream = ollama_client.chat(
         model=GEN_MODEL,
         messages=[
             {"role": "system", "content": system_role},
