@@ -670,8 +670,8 @@ function SignInList({ dark, compact }) {
 
 function SignInDropdown({ dark, onSignIn, tokens }) {
   return (
-    <div className={cx("absolute right-0 top-[calc(100%+10px)] w-[calc(100vw-2rem)] sm:w-80 max-w-80 rounded-2xl p-4 sm:p-5 shadow-2xl z-50 animate-drop-in backdrop-blur-xl", dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm")}>
-      <p className={cx("text-xs sm:text-sm font-semibold mb-3 sm:mb-4", tokens.text)}>Why sign in?</p>
+    <div className={cx("absolute right-0 top-[calc(100%+10px)] w-56 sm:w-80 rounded-2xl p-4 sm:p-5 shadow-2xl z-50 animate-drop-in backdrop-blur-xl", dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm")}>
+      <p className={cx("text-xs sm:text-sm font-semibold mb-3 sm:mb-4 text-center sm:text-left", tokens.text)}>Why sign in?</p>
       <SignInList dark={dark} />
       <Button onClick={onSignIn} className="w-full mt-5">Sign In</Button>
     </div>
@@ -680,22 +680,22 @@ function SignInDropdown({ dark, onSignIn, tokens }) {
 
 function GatedCard({ dark, tokens, icon: Icon, title, subtitle, onSignIn }) {
   return (
-    <div className="max-w-xl mx-auto text-center py-16 px-4">
-      <div className={cx("mx-auto h-14 w-14 rounded-2xl flex items-center justify-center mb-6", dark ? "bg-[var(--accent-500)]/10 text-[var(--accent-400)]" : "bg-[var(--accent-50)] text-[var(--accent-600)]")}>
-        <Icon size={26} />
+    <div className="max-w-xs sm:max-w-xl mx-auto text-center py-10 sm:py-16 px-4">
+      <div className={cx("mx-auto h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center mb-5 sm:mb-6", dark ? "bg-[var(--accent-500)]/10 text-[var(--accent-400)]" : "bg-[var(--accent-50)] text-[var(--accent-600)]")}>
+        <Icon size={22} />
       </div>
-      <h2 className={cx("text-2xl font-bold mb-2", tokens.text)}>{title}</h2>
-      <p className={cx("text-sm mb-8", tokens.textMuted)}>{subtitle}</p>
-      <div className={cx("rounded-2xl p-6 text-left", dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm")}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <h2 className={cx("text-xl sm:text-2xl font-bold mb-2", tokens.text)}>{title}</h2>
+      <p className={cx("text-sm mb-6 sm:mb-8", tokens.textMuted)}>{subtitle}</p>
+      <div className={cx("rounded-2xl p-4 sm:p-6 text-center sm:text-left", dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm")}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {SIGNIN_ITEMS.map((item, i) => (
-            <div key={i} className="flex items-center gap-2.5">
+            <div key={i} className="flex items-center justify-center sm:justify-start gap-2.5">
               <item.icon size={15} className={dark ? "text-[var(--accent-400)]" : "text-[var(--accent-600)]"} />
               <span className={cx("text-sm", dark ? "text-slate-300" : "text-slate-700")}>{item.title}</span>
             </div>
           ))}
         </div>
-        <Button onClick={onSignIn} className="w-full mt-6">Sign In</Button>
+        <Button onClick={onSignIn} className="w-full mt-5 sm:mt-6">Sign In</Button>
       </div>
     </div>
   );
@@ -712,7 +712,12 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
   const [tipKey, setTipKey] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [drawerClosing, setDrawerClosing] = useState(false);
   const drawerRef = useRef(null);
+  const closeDrawer = useCallback(() => {
+    setDrawerClosing(true);
+    setTimeout(() => { setMobileOpen(false); setDrawerClosing(false); }, 300);
+  }, []);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     onScroll();
@@ -733,11 +738,11 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
   }, [alreadyOnTip, tipKey]);
   useEffect(() => {
     if (!mobileOpen) return;
-    const handleClick = (e) => { if (drawerRef.current && !drawerRef.current.contains(e.target)) setMobileOpen(false); };
+    const handleClick = (e) => { if (drawerRef.current && !drawerRef.current.contains(e.target)) closeDrawer(); };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [mobileOpen]);
-  useEffect(() => { setMobileOpen(false); }, [page]);
+  }, [mobileOpen, closeDrawer]);
+  useEffect(() => { closeDrawer(); }, [page, closeDrawer]);
   const showAlreadyOn = (label) => {
     setAlreadyOnTip(null);
     requestAnimationFrame(() => { setAlreadyOnTip(label); setTipKey((k) => k + 1); });
@@ -889,18 +894,22 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
           </div>
         </div>
       </header>
-      {mobileOpen && (
+      {(mobileOpen || drawerClosing) && (
         <>
           <div
-            className="fixed inset-0 z-50 md:hidden"
+            className={cx(
+              "fixed inset-0 z-50 md:hidden",
+              drawerClosing ? "animate-fade-out" : ""
+            )}
             style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
-            onClick={() => setMobileOpen(false)}
+            onClick={closeDrawer}
           />
           <div
             ref={drawerRef}
             className={cx(
-              "fixed top-0 left-0 z-50 h-full w-72 shadow-2xl md:hidden flex flex-col animate-drawer-in",
-              dark ? "bg-[#1a1a19]" : "bg-white"
+              "fixed top-0 left-0 z-50 h-full w-72 shadow-2xl md:hidden flex flex-col",
+              dark ? "bg-[#1a1a19]" : "bg-white",
+              drawerClosing ? "animate-drawer-out" : "animate-drawer-in"
             )}
           >
             <div className={cx("flex items-center justify-between px-5 h-16 border-b", dark ? "border-white/10" : "border-slate-200")}>
@@ -912,7 +921,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
                 <button
                   onClick={() => {
                     setPage(hasResults ? "jobs" : "home");
-                    setMobileOpen(false);
+                    closeDrawer();
                   }}
                   className={cx("text-lg font-bold tracking-tight transition-all duration-200 hover:scale-110", tokens.text)}
                 >
@@ -921,7 +930,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
                 </button>
               )}
               <button
-                onClick={() => setMobileOpen(false)}
+                onClick={closeDrawer}
                 className={cx(
                   "h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200",
                   dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
@@ -938,7 +947,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
                   onClick={() => {
                     trackAction();
                     setPage(item.key);
-                    setMobileOpen(false);
+                    closeDrawer();
                   }}
                   className={cx(
                     "flex items-center gap-3 w-full px-5 py-3 text-sm font-medium transition-colors duration-200",
@@ -964,11 +973,11 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
                 {dark ? "Light Mode" : "Dark Mode"}
               </button>
               {signedIn ? (
-                <Button variant="outline" dark={dark} onClick={() => { signOut(); setMobileOpen(false); }} className="w-full">
+                <Button variant="outline" dark={dark} onClick={() => { signOut(); closeDrawer(); }} className="w-full">
                   <LogOut size={14} /> Sign Out
                 </Button>
               ) : (
-                <Button onClick={() => { openAuth(); setMobileOpen(false); }} className="w-full">
+                <Button onClick={() => { openAuth(); closeDrawer(); }} className="w-full">
                   Sign In
                 </Button>
               )}
