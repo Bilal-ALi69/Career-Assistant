@@ -5,7 +5,7 @@ import {
   Accessibility, Check, CheckCircle2, Circle, Shield, SlidersHorizontal,
   Activity, Pencil, Download, Trash2, ChevronDown,
   LogOut, ArrowDown, Loader2, Brain, Target, Languages as LanguagesIcon,
-  XCircle, Save, Sunrise, Sunset, Clock, RefreshCw,
+  XCircle, Save, Sunrise, Sunset, Clock, RefreshCw, Menu, X,
 } from "lucide-react";
 import { API_BASE, ApiError, login, register, getAccount, deleteAccount, getProfile, updateProfile, fetchRecommendations, fetchRegeneratedRecommendations, cancelRecommendation, fetchWorkdaySummary } from "./lib/api";
 import { PROFILE_FIELD_GROUPS } from "./lib/profileFields";
@@ -711,6 +711,8 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
   const [alreadyOnTip, setAlreadyOnTip] = useState(null);
   const [tipKey, setTipKey] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const drawerRef = useRef(null);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     onScroll();
@@ -729,6 +731,13 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
     const t = setTimeout(() => setAlreadyOnTip(null), 3000);
     return () => clearTimeout(t);
   }, [alreadyOnTip, tipKey]);
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handleClick = (e) => { if (drawerRef.current && !drawerRef.current.contains(e.target)) setMobileOpen(false); };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [mobileOpen]);
+  useEffect(() => { setMobileOpen(false); }, [page]);
   const showAlreadyOn = (label) => {
     setAlreadyOnTip(null);
     requestAnimationFrame(() => { setAlreadyOnTip(label); setTipKey((k) => k + 1); });
@@ -760,31 +769,43 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
         }}
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          {signedIn ? (
-            <span className={cx("text-lg font-bold tracking-tight", tokens.text)}>
-              Career <span className="text-[var(--accent-500)]">Assistant</span>
-            </span>
-          ) : (
-            <div className="relative">
-              <button
-                onClick={() => {
-                  if (page === "home") { showAlreadyOn("Home"); return; }
-                  setPage(hasResults ? "jobs" : "home");
-                  setShowTitleTip(false);
-                  setTitleTipArmed(false);
-                }}
-                className={cx("text-lg font-bold tracking-tight transition-all duration-200 hover:scale-110", tokens.text)}
-              >
-                Career <span className="text-[var(--accent-500)]">Assistant</span>
-                <span className="inline-block ml-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-500)] animate-logo-pulse align-middle" />
-              </button>
-              {showTitleTip && (
-                <div className={cx("absolute left-1/2 -translate-x-1/2 top-[calc(100%+8px)] whitespace-nowrap rounded-xl px-4 py-2 text-xs font-medium shadow-xl z-50 animate-drop-in", dark ? "bg-[#131313] text-slate-200" : "bg-white text-slate-700 border border-[#e2e8f0]")}>
-                  Tap to go to Home Screen
-                </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className={cx(
+                "md:hidden h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200 -ml-1",
+                dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
               )}
-            </div>
-          )}
+              aria-label="Open menu"
+            >
+              <Menu size={20} />
+            </button>
+            {signedIn ? (
+              <span className={cx("text-lg font-bold tracking-tight", tokens.text)}>
+                Career <span className="text-[var(--accent-500)]">Assistant</span>
+              </span>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    if (page === "home") { showAlreadyOn("Home"); return; }
+                    setPage(hasResults ? "jobs" : "home");
+                    setShowTitleTip(false);
+                    setTitleTipArmed(false);
+                  }}
+                  className={cx("text-lg font-bold tracking-tight transition-all duration-200 hover:scale-110", tokens.text)}
+                >
+                  Career <span className="text-[var(--accent-500)]">Assistant</span>
+                  <span className="inline-block ml-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-500)] animate-logo-pulse align-middle" />
+                </button>
+                {showTitleTip && (
+                  <div className={cx("absolute left-1/2 -translate-x-1/2 top-[calc(100%+8px)] whitespace-nowrap rounded-xl px-4 py-2 text-xs font-medium shadow-xl z-50 animate-drop-in", dark ? "bg-[#131313] text-slate-200" : "bg-white text-slate-700 border border-[#e2e8f0]")}>
+                    Tap to go to Home Screen
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <nav className="hidden md:flex items-center gap-1 relative">
             {alreadyOnTip && (
@@ -868,6 +889,77 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
           </div>
         </div>
       </header>
+      {mobileOpen && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40 md:hidden" onClick={() => setMobileOpen(false)} />
+          <div
+            ref={drawerRef}
+            className={cx(
+              "fixed top-0 left-0 z-50 h-full w-72 shadow-2xl md:hidden flex flex-col transition-transform duration-300",
+              dark ? "bg-[#1a1a19]" : "bg-white",
+              mobileOpen ? "translate-x-0" : "-translate-x-full"
+            )}
+          >
+            <div className={cx("flex items-center justify-between px-5 h-16 border-b", dark ? "border-white/10" : "border-slate-200")}>
+              <span className={cx("text-lg font-bold tracking-tight", tokens.text)}>
+                Career <span className="text-[var(--accent-500)]">Assistant</span>
+              </span>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className={cx(
+                  "h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200",
+                  dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
+                )}
+                aria-label="Close menu"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <nav className="flex-1 py-3">
+              {navItems.map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => {
+                    trackAction();
+                    setPage(item.key);
+                    setMobileOpen(false);
+                  }}
+                  className={cx(
+                    "flex items-center gap-3 w-full px-5 py-3 text-sm font-medium transition-colors duration-200",
+                    page === item.key
+                      ? "text-[var(--accent-500)] bg-[var(--accent-500)]/10"
+                      : dark ? "text-slate-300 hover:bg-white/5" : "text-slate-700 hover:bg-slate-100"
+                  )}
+                >
+                  <item.icon size={17} />
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+            <div className={cx("px-5 py-4 border-t flex flex-col gap-2", dark ? "border-white/10" : "border-slate-200")}>
+              <button
+                onClick={() => setDark((d) => !d)}
+                className={cx(
+                  "flex items-center gap-3 w-full px-0 py-2 text-sm font-medium transition-colors duration-200 rounded-lg",
+                  dark ? "text-slate-300 hover:bg-white/5" : "text-slate-700 hover:bg-slate-100"
+                )}
+              >
+                {dark ? <Sun size={17} /> : <Moon size={17} />}
+                {dark ? "Light Mode" : "Dark Mode"}
+              </button>
+              {signedIn ? (
+                <Button variant="outline" dark={dark} onClick={() => { signOut(); setMobileOpen(false); }} className="w-full">
+                  <LogOut size={14} /> Sign Out
+                </Button>
+              ) : (
+                <Button onClick={() => { openAuth(); setMobileOpen(false); }} className="w-full">
+                  Sign In
+                </Button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
       <div
         className="pointer-events-none fixed top-16 left-0 right-0 z-30 h-10"
         style={{
@@ -2344,7 +2436,7 @@ export default function CareerAssistantApp() {
 
   const goAnalyze = (values, isRegen = false) => { trackAction(); setRegenerateMode(isRegen); setFormValues(values); setResults(null); setPage("analyzing"); };
   const doneAnalyzing = (data) => { if (data) appendJobHistory(data, email); setResults(data); setPage("jobs"); };
-  const cancelAnalyzing = () => { cancelRecommendation(token).catch(() => {}); setPage("skills"); };
+  const cancelAnalyzing = () => { cancelRecommendation(token).catch(() => {}); setPage(signedIn ? "skills" : "home"); };
 
   // Full-screen takeover while a generation is running: no navbar, so there's
   // nowhere else to accidentally tap that would strand the in-flight request.
