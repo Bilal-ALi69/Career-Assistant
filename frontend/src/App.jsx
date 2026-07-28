@@ -891,19 +891,35 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
       </header>
       {mobileOpen && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/40 md:hidden" onClick={() => setMobileOpen(false)} />
+          <div
+            className="fixed inset-0 z-50 md:hidden"
+            style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
+            onClick={() => setMobileOpen(false)}
+          />
           <div
             ref={drawerRef}
             className={cx(
-              "fixed top-0 left-0 z-50 h-full w-72 shadow-2xl md:hidden flex flex-col transition-transform duration-300",
-              dark ? "bg-[#1a1a19]" : "bg-white",
-              mobileOpen ? "translate-x-0" : "-translate-x-full"
+              "fixed top-0 left-0 z-50 h-full w-72 shadow-2xl md:hidden flex flex-col animate-drawer-in",
+              dark ? "bg-[#1a1a19]" : "bg-white"
             )}
           >
             <div className={cx("flex items-center justify-between px-5 h-16 border-b", dark ? "border-white/10" : "border-slate-200")}>
-              <span className={cx("text-lg font-bold tracking-tight", tokens.text)}>
-                Career <span className="text-[var(--accent-500)]">Assistant</span>
-              </span>
+              {signedIn ? (
+                <span className={cx("text-lg font-bold tracking-tight", tokens.text)}>
+                  Career <span className="text-[var(--accent-500)]">Assistant</span>
+                </span>
+              ) : (
+                <button
+                  onClick={() => {
+                    setPage(hasResults ? "jobs" : "home");
+                    setMobileOpen(false);
+                  }}
+                  className={cx("text-lg font-bold tracking-tight transition-all duration-200 hover:scale-110", tokens.text)}
+                >
+                  Career <span className="text-[var(--accent-500)]">Assistant</span>
+                  <span className="inline-block ml-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-500)] animate-logo-pulse align-middle" />
+                </button>
+              )}
               <button
                 onClick={() => setMobileOpen(false)}
                 className={cx(
