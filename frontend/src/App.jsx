@@ -95,7 +95,7 @@ function Pill({ children, dark, tone = "blue" }) {
 }
 
 function Button({ children, onClick, variant = "primary", className = "", dark, ...rest }) {
-  const base = "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-500)] focus-visible:ring-offset-2";
+  const base = "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.97] active:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-500)] focus-visible:ring-offset-2 touch-active-primary";
   const variants = {
     primary: "bg-[var(--accent-600)] hover:bg-[var(--accent-500)] text-white px-5 py-3",
     ghost: dark ? "text-slate-300 hover:bg-zinc-800/60 px-4 py-2" : "text-slate-600 hover:bg-[#e2e8f0] px-4 py-2",
@@ -177,7 +177,7 @@ function AuthModal({ dark, tokens, onClose, onAuthed, onRegistered }) {
         <div className="grid grid-cols-3 gap-3 mb-6">
           <button
             type="button"
-            className="flex items-center justify-center h-11 rounded-[10px] border border-zinc-800/80 bg-[#131313] hover:bg-zinc-800 hover:-translate-y-0.5 transition-all duration-200"
+            className="flex items-center justify-center h-11 rounded-[10px] border border-zinc-800/80 bg-[#131313] hover:bg-zinc-800 hover:-translate-y-0.5 active:scale-95 active:opacity-80 transition-all duration-200 touch-active-primary"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -188,7 +188,7 @@ function AuthModal({ dark, tokens, onClose, onAuthed, onRegistered }) {
           </button>
           <button
             type="button"
-            className="flex items-center justify-center h-11 rounded-[10px] border border-zinc-800/80 bg-[#131313] hover:bg-zinc-800 hover:-translate-y-0.5 transition-all duration-200"
+            className="flex items-center justify-center h-11 rounded-[10px] border border-zinc-800/80 bg-[#131313] hover:bg-zinc-800 hover:-translate-y-0.5 active:scale-95 active:opacity-80 transition-all duration-200 touch-active-primary"
           >
             <svg width="16" height="18" viewBox="0 0 16 18" fill="none">
               <path d="M13.17 9.51c-.03-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.19-1.73-1.35-.14-2.64.8-3.32.8-.69 0-1.75-.78-2.87-.76-1.47.02-2.83.85-3.58 2.17-1.53 2.66-.39 6.59 1.09 8.75.73 1.05 1.6 2.23 2.74 2.19 1.11-.04 1.53-.72 2.87-.72 1.33 0 1.71.72 2.86.7 1.18-.02 1.93-1.07 2.65-2.12.84-1.21 1.18-2.39 1.2-2.45-.03-.01-2.3-.89-2.33-3.53l-.06-.02zM11.07 3.11c.6-.73 1.01-1.75.9-2.76-.87.04-1.92.58-2.54 1.31-.55.65-1.03 1.69-.9 2.69.97.08 1.96-.49 2.54-1.24z" fill="white"/>
@@ -196,7 +196,7 @@ function AuthModal({ dark, tokens, onClose, onAuthed, onRegistered }) {
           </button>
           <button
             type="button"
-            className="flex items-center justify-center h-11 rounded-[10px] border border-zinc-800/80 bg-[#131313] hover:bg-zinc-800 hover:-translate-y-0.5 transition-all duration-200"
+            className="flex items-center justify-center h-11 rounded-[10px] border border-zinc-800/80 bg-[#131313] hover:bg-zinc-800 hover:-translate-y-0.5 active:scale-95 active:opacity-80 transition-all duration-200 touch-active-primary"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <rect x="0" y="0" width="8.5" height="8.5" fill="#F25022"/>
@@ -282,7 +282,7 @@ function AuthModal({ dark, tokens, onClose, onAuthed, onRegistered }) {
             className={cx(
               "w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200",
               "bg-[var(--accent-600)] hover:bg-[var(--accent-500)] text-white shadow-lg shadow-[var(--accent-600)]/20 hover:shadow-[var(--accent-500)]/30 hover:-translate-y-0.5",
-              "px-5 py-3 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-500)] focus-visible:ring-offset-2",
+              "px-5 py-3 active:scale-[0.97] active:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-500)] focus-visible:ring-offset-2 touch-active-primary",
               "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg"
             )}
           >
@@ -778,7 +778,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
             <button
               onClick={() => setMobileOpen(true)}
               className={cx(
-                "md:hidden h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200 -ml-1",
+                "md:hidden h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200 -ml-1 touch-active-toggle",
                 dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
               )}
               aria-label="Open menu"
@@ -833,7 +833,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
                   if (!signedIn) setTitleTipArmed(true);
                 }}
                 className={cx(
-                  "group relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors duration-200",
+                  "group relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors duration-200 touch-active-nav",
                   page === item.key ? "text-[var(--accent-500)]" : cx(dark ? "text-[#c3c2b7]" : tokens.textMuted)
                 )}
               >
@@ -854,7 +854,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
               <button
                 onClick={() => setDark((d) => !d)}
                 className={cx(
-                  "h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200",
+                  "h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200 touch-active-toggle",
                   dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
                 )}
                 title={dark ? "Switch to light mode" : "Switch to dark mode"}
@@ -871,7 +871,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
                 <button
                   onClick={openAuth}
                   className={cx(
-                    "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-all duration-200",
+                    "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-all duration-200 active:scale-95 active:opacity-80 touch-active-primary",
                     "border",
                     dark
                       ? "border-white/15 text-slate-200 hover:bg-[var(--accent-500)]/10 hover:border-[var(--accent-500)]/40"
@@ -923,7 +923,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
                     setPage(hasResults ? "jobs" : "home");
                     closeDrawer();
                   }}
-                  className={cx("text-lg font-bold tracking-tight transition-all duration-200 hover:scale-110", tokens.text)}
+                  className={cx("text-lg font-bold tracking-tight transition-all duration-200 hover:scale-110 touch-active-primary", tokens.text)}
                 >
                   Career <span className="text-[var(--accent-500)]">Assistant</span>
                   <span className="inline-block ml-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-500)] animate-logo-pulse align-middle" />
@@ -932,7 +932,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
               <button
                 onClick={closeDrawer}
                 className={cx(
-                  "h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200",
+                  "h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200 touch-active-toggle",
                   dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
                 )}
                 aria-label="Close menu"
@@ -950,7 +950,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
                     closeDrawer();
                   }}
                   className={cx(
-                    "flex items-center gap-3 w-full px-5 py-3 text-sm font-medium transition-colors duration-200",
+                    "flex items-center gap-3 w-full px-5 py-3 text-sm font-medium transition-colors duration-200 touch-active-nav",
                     page === item.key
                       ? "text-[var(--accent-500)] bg-[var(--accent-500)]/10"
                       : dark ? "text-slate-300 hover:bg-white/5" : "text-slate-700 hover:bg-slate-100"
@@ -965,7 +965,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
               <button
                 onClick={() => setDark((d) => !d)}
                 className={cx(
-                  "flex items-center gap-3 w-full px-0 py-2 text-sm font-medium transition-colors duration-200 rounded-lg",
+                  "flex items-center gap-3 w-full px-0 py-2 text-sm font-medium transition-colors duration-200 rounded-lg touch-active-toggle",
                   dark ? "text-slate-300 hover:bg-white/5" : "text-slate-700 hover:bg-slate-100"
                 )}
               >
