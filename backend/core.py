@@ -17,18 +17,19 @@ ollama_client = ollama.Client(host=OLLAMA_HOST)
 cloud_client = ollama.Client(
     host="https://ollama.com",
     headers={"Authorization": f"Bearer {OLLAMA_API_KEY}"} if OLLAMA_API_KEY else {},
+    timeout=30,
 )
 
 DB_FILE = Path(__file__).with_name("career_cache.db")
 EMBED_MODEL = "all-minilm"
-GEN_MODEL = "gpt-oss:120b"
+GEN_MODEL = "qwen2.5:7b"
 TRAIT_SIMILARITY_THRESHOLD = 0.85
 
 class GenerationCancelled(Exception):
     """Raised when a user cancels mid-generation."""
 
 
-MIN_JOBS = 4
+MIN_JOBS = 3
 SPELLCHECK_CONFIDENCE_THRESHOLD = 0.85
 SPELLCHECK_WHITELIST = {
     "python", "javascript", "html", "css", "sql", "ux", "ui", "api",
@@ -473,28 +474,18 @@ def sanitize_job(job: dict) -> dict:
 
 def generate_job_list(strengths: str, weaknesses: str, interests: str, cancel_event=None) -> list[dict]:
     system_role = (
-        "You are a career-matching engine for students seeking entry-level or "
-        "student-friendly jobs. Respond with ONLY valid JSON, no markdown, no extra "
-        "commentary, matching exactly this shape:\n"
+        "You rank entry-level jobs for a candidate. "
+        "Reply ONLY with valid JSON (no markdown):\n"
         '{"jobs": [\n'
-        '  {"title": "string", "description": "string, 1-2 sentences", '
-        '"confidence": integer 0-100, "justification": "string, 1 sentence", '
-        '"estimated_salary": "string, e.g. $45k-$60k/yr", '
-        '"match_breakdown": ["string — short bullet explaining why this matches", '
-        '"string — second short bullet explaining another match reason"], '
-        '"action_tags": ["string — e.g. Remote, High Stress, Python", '
-        '"string — e.g. Team-Oriented, Fast-Paced", '
-        '"string — e.g. Entry Level"]}\n'
+        '  {"title": "string", "description": "1-2 sentences", '
+        '"confidence": 0-100, "justification": "1 sentence", '
+        '"estimated_salary": "e.g. $45k-$60k/yr", '
+        '"match_breakdown": ["bullet 1", "bullet 2"], '
+        '"action_tags": ["tag1", "tag2", "tag3"]}\n'
         ']}\n'
-        f"Provide AT LEAST {MIN_JOBS} jobs, ranked from HIGHEST to LOWEST confidence. "
-        "Confidence reflects how well the job matches the given strengths, weaknesses, "
-        "and interests. Justification must explain the score in one clear sentence. "
-        "For estimated_salary, provide a realistic annual income range in USD. "
-        "match_breakdown must contain exactly 2 short bullets explaining how the "
-        "candidate's traits connect to this role — avoid jargon, be specific. "
-        "action_tags must contain exactly 2-3 short tags describing the work "
-        "environment, required tools/skills, stress level, or work style — "
-        "e.g. 'Remote', 'Python', 'High Stress', 'Team-Oriented', 'Entry Level'."
+        f"Return {MIN_JOBS} jobs ranked by confidence. "
+        "match_breakdown: exactly 2 short bullets. "
+        "action_tags: exactly 2-3 tags (environment, tools, style)."
     )
     user_prompt = f"Strengths: {strengths}\nWeaknesses: {weaknesses}\nInterests: {interests}"
 
@@ -598,31 +589,19 @@ def generate_personalized_job_list(
         "Use the user's salary expectations as a reference if provided."
     )
     system_role = (
-        "You are a career-matching engine for students seeking entry-level or "
-        "student-friendly jobs. Respond with ONLY valid JSON, no markdown, no extra "
-        "commentary, matching exactly this shape:\n"
+        "You rank entry-level jobs tailored to a candidate's full profile. "
+        "Reply ONLY with valid JSON (no markdown):\n"
         '{"jobs": [\n'
-        '  {"title": "string", "description": "string, 1-2 sentences", '
-        '"confidence": integer 0-100, "justification": "string, 1 sentence", '
-        '"estimated_salary": "string, e.g. $45k-$60k/yr or PKR 800k-1.2M/yr", '
-        '"match_breakdown": ["string — short bullet explaining why this matches", '
-        '"string — second short bullet explaining another match reason"], '
-        '"action_tags": ["string — e.g. Remote, High Stress, Python", '
-        '"string — e.g. Team-Oriented, Fast-Paced", '
-        '"string — e.g. Entry Level"]}\n'
+        '  {"title": "string", "description": "1-2 sentences", '
+        '"confidence": 0-100, "justification": "1 sentence", '
+        '"estimated_salary": "string with currency", '
+        '"match_breakdown": ["bullet 1", "bullet 2"], '
+        '"action_tags": ["tag1", "tag2", "tag3"]}\n'
         ']}\n'
-        f"Provide AT LEAST {MIN_JOBS} jobs, ranked from HIGHEST to LOWEST confidence. "
-        "Tailor every recommendation to the user's personal background constraints. "
-        "Explain how their strengths and weaknesses translate into realistic roles "
-        "given their education, experience, location, availability, goals, and other "
-        "constraints. Confidence reflects how well each job fits the full profile. "
-        "Justification must connect strengths, weaknesses, and background constraints "
-        "in one clear sentence. "
-        "match_breakdown must contain exactly 2 short bullets explaining how the "
-        "candidate's traits connect to this role — avoid jargon, be specific. "
-        "action_tags must contain exactly 2-3 short tags describing the work "
-        "environment, required tools/skills, stress level, or work style — "
-        "e.g. 'Remote', 'Python', 'High Stress', 'Team-Oriented', 'Entry Level'. "
+        f"Return {MIN_JOBS} jobs ranked by confidence. "
+        "Tailor to the candidate's background, location, goals. "
+        "match_breakdown: exactly 2 short bullets. "
+        "action_tags: exactly 2-3 tags. "
         + salary_instruction
     )
     user_prompt = (
@@ -698,32 +677,21 @@ def generate_regenerated_job_list(
         salary_instruction = "For estimated_salary, provide a realistic annual income range in USD. "
 
     system_role = (
-        "You are a career-matching engine. The user already received a set of job "
-        "suggestions but found them unsatisfactory. You must generate a COMPLETELY "
-        "DIFFERENT set of career recommendations. Do NOT repeat any job titles from a "
-        "previous generation. Think laterally — suggest roles from adjacent or less "
-        "obvious fields that still match the candidate's profile. "
-        "Respond with ONLY valid JSON, no markdown, no extra commentary, matching "
-        "exactly this shape:\n"
+        "The candidate rejected the previous job suggestions. "
+        "Suggest COMPLETELY DIFFERENT roles — avoid repeating any title. "
+        "Think laterally (adjacent or less obvious fields). "
+        "Reply ONLY with valid JSON (no markdown):\n"
         '{"jobs": [\n'
-        '  {"title": "string", "description": "string, 1-2 sentences", '
-        '"confidence": integer 0-100, "justification": "string, 1 sentence", '
-        '"estimated_salary": "string, e.g. $45k-$60k/yr", '
-        '"match_breakdown": ["string — short bullet explaining why this matches", '
-        '"string — second short bullet explaining another match reason"], '
-        '"action_tags": ["string — e.g. Remote, High Stress, Python", '
-        '"string — e.g. Team-Oriented, Fast-Paced", '
-        '"string — e.g. Entry Level"]}\n'
+        '  {"title": "string", "description": "1-2 sentences", '
+        '"confidence": 0-100, "justification": "1 sentence", '
+        '"estimated_salary": "string", '
+        '"match_breakdown": ["bullet 1", "bullet 2"], '
+        '"action_tags": ["tag1", "tag2", "tag3"]}\n'
         ']}\n'
-        f"Provide AT LEAST {MIN_JOBS} jobs, ranked from HIGHEST to LOWEST confidence. "
-        "Every title MUST be different from what was already suggested. "
-        "Confidence reflects how well the job matches the given strengths, weaknesses, "
-        "and interests. Justification must explain the score in one clear sentence. "
-        "match_breakdown must contain exactly 2 short bullets explaining how the "
-        "candidate's traits connect to this role — avoid jargon, be specific. "
-        "action_tags must contain exactly 2-3 short tags describing the work "
-        "environment, required tools/skills, stress level, or work style — "
-        "e.g. 'Remote', 'Python', 'High Stress', 'Team-Oriented', 'Entry Level'. "
+        f"Return {MIN_JOBS} jobs ranked by confidence. "
+        "All titles must be different from the previous round. "
+        "match_breakdown: exactly 2 short bullets. "
+        "action_tags: exactly 2-3 tags. "
         + salary_instruction
     )
 
@@ -838,21 +806,14 @@ def get_career_advice(conn, strengths: str, weaknesses: str, interests: str) -> 
 
 def generate_workday_summary(job_title: str, job_description: str, cancel_event=None) -> str:
     system_role = (
-        "You are a career advisor generating a realistic workday summary.\n\n"
-        "FORMAT — follow this structure EXACTLY:\n"
+        "Generate a realistic workday summary in EXACTLY this format:\n"
         "Morning Kickoff:\n- task\n- task\n\n"
         "Mid-Day Sync:\n- task\n- task\n\n"
         "Afternoon Execution:\n- task\n- task\n\n"
         "Late-Day Wrap-Up:\n- task\n- task\n\n"
         "Evening Wind-Down:\n- task\n- task\n\n"
-        "RULES:\n"
-        "- Use EXACTLY these 5 phase headings: Morning Kickoff, Mid-Day Sync, Afternoon Execution, Late-Day Wrap-Up, Evening Wind-Down.\n"
-        "- Each heading must end with a colon.\n"
-        "- Under each heading, list 2-4 tasks as bullet points starting with '- '.\n"
-        "- Keep each bullet concise (one sentence max).\n"
-        "- Mention concrete tasks, tools, meetings, and interactions relevant to the role.\n"
-        "- Do NOT use markdown, headers (#), bold, or any other formatting.\n"
-        "- Do NOT add an introduction or conclusion — output ONLY the 5 phases above."
+        "Use exactly these 5 phase headings with colons. "
+        "2-4 bullet tasks per phase. No markdown, no intro/conclusion."
     )
     user_prompt = f"Job title: {job_title}\nJob description: {job_description}"
 
