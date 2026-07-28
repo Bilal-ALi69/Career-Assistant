@@ -779,7 +779,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
                     setShowTitleTip(false);
                     setTitleTipArmed(false);
                   }}
-                  className={cx("text-lg font-bold tracking-tight transition-all duration-200 hover:scale-110", tokens.text)}
+                  className={cx("text-lg font-bold tracking-tight transition-all duration-200 hover:scale-110 active:scale-110", tokens.text)}
                 >
                   Career <span className="text-[var(--accent-500)]">Assistant</span>
                   <span className="inline-block ml-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-500)] animate-logo-pulse align-middle" />
@@ -831,16 +831,6 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
           </nav>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => { if (signedIn) setPage("account"); else openAuth(); }}
-              className={cx(
-                "md:hidden h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200 touch-active-toggle",
-                dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
-              )}
-              aria-label={signedIn ? "Account" : "Sign in"}
-            >
-              <User size={20} />
-            </button>
             {!signedIn && (
               <button
                 onClick={() => setDark((d) => !d)}
@@ -901,6 +891,13 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
 --------------------------------------------------------- */
 
 function MobileTabBar({ dark, page, setPage, trackAction }) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   const tabs = [
     { key: "jobs-nav", label: "My Jobs", icon: Briefcase },
     { key: "skills", label: "Skills", icon: BarChart3 },
@@ -912,9 +909,12 @@ function MobileTabBar({ dark, page, setPage, trackAction }) {
       <div
         className="flex items-center justify-around py-2 px-2"
         style={{
-          background: dark ? "rgba(32,32,31,0.75)" : "rgba(255,255,255,0.75)",
-          backdropFilter: "blur(22px)",
-          WebkitBackdropFilter: "blur(22px)",
+          background: dark
+            ? (scrolled ? "rgba(32,32,31,0.75)" : "rgba(32,32,31,0.35)")
+            : (scrolled ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.35)"),
+          backdropFilter: scrolled ? "blur(22px)" : "blur(14px)",
+          WebkitBackdropFilter: scrolled ? "blur(22px)" : "blur(14px)",
+          transition: "background 0.4s ease, backdrop-filter 0.4s ease",
         }}
       >
         {tabs.map((t) => {
