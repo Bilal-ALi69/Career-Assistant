@@ -670,8 +670,8 @@ function SignInList({ dark, compact }) {
 
 function SignInDropdown({ dark, onSignIn, tokens }) {
   return (
-    <div className={cx("absolute right-0 top-[calc(100%+10px)] w-80 rounded-2xl p-5 shadow-2xl z-50 animate-drop-in backdrop-blur-xl", dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm")}>
-      <p className={cx("text-sm font-semibold mb-4", tokens.text)}>Why sign in?</p>
+    <div className={cx("absolute right-0 top-[calc(100%+10px)] w-[calc(100vw-2rem)] sm:w-80 max-w-80 rounded-2xl p-4 sm:p-5 shadow-2xl z-50 animate-drop-in backdrop-blur-xl", dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm")}>
+      <p className={cx("text-xs sm:text-sm font-semibold mb-3 sm:mb-4", tokens.text)}>Why sign in?</p>
       <SignInList dark={dark} />
       <Button onClick={onSignIn} className="w-full mt-5">Sign In</Button>
     </div>
