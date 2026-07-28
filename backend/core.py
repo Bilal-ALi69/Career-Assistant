@@ -23,7 +23,36 @@ cloud_client = ollama.Client(
 DB_FILE = Path(__file__).with_name("career_cache.db")
 EMBED_MODEL = "all-minilm"
 GEN_MODEL = "qwen2.5:7b"
+LOCAL_FALLBACK_MODEL = "qwen2.5:1.5b"
 TRAIT_SIMILARITY_THRESHOLD = 0.85
+
+
+def stream_chat(messages, cancel_event=None, **kwargs):
+    """Try cloud model first; fall back to local on auth/timeout errors."""
+    clients = [
+        (cloud_client, GEN_MODEL),
+        (ollama_client, LOCAL_FALLBACK_MODEL),
+    ]
+
+    last_error = None
+    for client, model in clients:
+        try:
+            chunks = []
+            stream = client.chat(model=model, messages=messages, stream=True, **kwargs)
+            for chunk in stream:
+                if cancel_event is not None and cancel_event.is_set():
+                    raise GenerationCancelled()
+                text = chunk.get("message", {}).get("content", "")
+                if text:
+                    chunks.append(text)
+            return "".join(chunks)
+        except GenerationCancelled:
+            raise
+        except Exception as e:
+            last_error = e
+            continue
+
+    raise last_error or RuntimeError("All generation backends failed")
 
 class GenerationCancelled(Exception):
     """Raised when a user cancels mid-generation."""
@@ -489,24 +518,14 @@ def generate_job_list(strengths: str, weaknesses: str, interests: str, cancel_ev
     )
     user_prompt = f"Strengths: {strengths}\nWeaknesses: {weaknesses}\nInterests: {interests}"
 
-    chunks = []
-    stream = cloud_client.chat(
-        model=GEN_MODEL,
-        format="json",
+    raw = stream_chat(
         messages=[
             {"role": "system", "content": system_role},
             {"role": "user", "content": user_prompt},
         ],
-        stream=True,
+        cancel_event=cancel_event,
+        format="json",
     )
-    for chunk in stream:
-        if cancel_event is not None and cancel_event.is_set():
-            raise GenerationCancelled()
-        text = chunk.get("message", {}).get("content", "")
-        if text:
-            chunks.append(text)
-
-    raw = "".join(chunks)
 
     try:
         raw_jobs = json.loads(raw).get("jobs", [])
@@ -611,24 +630,14 @@ def generate_personalized_job_list(
         f"Personal background:\n{profile_context}"
     )
 
-    chunks = []
-    stream = cloud_client.chat(
-        model=GEN_MODEL,
-        format="json",
+    raw = stream_chat(
         messages=[
             {"role": "system", "content": system_role},
             {"role": "user", "content": user_prompt},
         ],
-        stream=True,
+        cancel_event=cancel_event,
+        format="json",
     )
-    for chunk in stream:
-        if cancel_event is not None and cancel_event.is_set():
-            raise GenerationCancelled()
-        text = chunk.get("message", {}).get("content", "")
-        if text:
-            chunks.append(text)
-
-    raw = "".join(chunks)
 
     try:
         raw_jobs = json.loads(raw).get("jobs", [])
@@ -706,24 +715,14 @@ def generate_regenerated_job_list(
         user_lines.append(f"Personal background:\n{profile_context}")
     user_prompt = "\n".join(user_lines)
 
-    chunks = []
-    stream = cloud_client.chat(
-        model=GEN_MODEL,
-        format="json",
+    raw = stream_chat(
         messages=[
             {"role": "system", "content": system_role},
             {"role": "user", "content": user_prompt},
         ],
-        stream=True,
+        cancel_event=cancel_event,
+        format="json",
     )
-    for chunk in stream:
-        if cancel_event is not None and cancel_event.is_set():
-            raise GenerationCancelled()
-        text = chunk.get("message", {}).get("content", "")
-        if text:
-            chunks.append(text)
-
-    raw = "".join(chunks)
 
     try:
         raw_jobs = json.loads(raw).get("jobs", [])
@@ -817,23 +816,15 @@ def generate_workday_summary(job_title: str, job_description: str, cancel_event=
     )
     user_prompt = f"Job title: {job_title}\nJob description: {job_description}"
 
-    chunks = []
-    stream = cloud_client.chat(
-        model=GEN_MODEL,
+    raw = stream_chat(
         messages=[
             {"role": "system", "content": system_role},
             {"role": "user", "content": user_prompt},
         ],
-        stream=True,
+        cancel_event=cancel_event,
     )
-    for chunk in stream:
-        if cancel_event is not None and cancel_event.is_set():
-            raise GenerationCancelled()
-        text = chunk.get("message", {}).get("content", "")
-        if text:
-            chunks.append(text)
 
-    return "".join(chunks).strip() or "Workday details are not available at this time."
+    return raw.strip() or "Workday details are not available at this time."
 
 
 def get_workday_summary(job_title: str, job_description: str, cancel_event=None, conn=None) -> dict:
