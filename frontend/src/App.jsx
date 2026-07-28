@@ -835,7 +835,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
               <button
                 onClick={() => setDark((d) => !d)}
                 className={cx(
-                  "hidden md:inline-flex h-9 w-9 rounded-lg items-center justify-center transition-colors duration-200 touch-active-toggle",
+                  "h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200 touch-active-toggle",
                   dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
                 )}
                 title={dark ? "Switch to light mode" : "Switch to dark mode"}
