@@ -5,7 +5,7 @@ import {
   Accessibility, Check, CheckCircle2, Circle, Shield, SlidersHorizontal,
   Activity, Pencil, Download, Trash2, ChevronDown,
   LogOut, ArrowDown, Loader2, Brain, Target, Languages as LanguagesIcon,
-  XCircle, Save, Sunrise, Sunset, Clock, RefreshCw, Menu, X,
+  XCircle, Save, Sunrise, Sunset, Clock, RefreshCw,
 } from "lucide-react";
 import { API_BASE, ApiError, login, register, getAccount, deleteAccount, getProfile, updateProfile, fetchRecommendations, fetchRegeneratedRecommendations, cancelRecommendation, fetchWorkdaySummary } from "./lib/api";
 import { PROFILE_FIELD_GROUPS } from "./lib/profileFields";
@@ -150,11 +150,12 @@ function AuthModal({ dark, tokens, onClose, onAuthed, onRegistered }) {
   const isLogin = mode === "login";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 animate-overlay-in" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm px-0 md:px-4 animate-overlay-in" onClick={onClose}>
       <div
         className={cx(
-          "w-full max-w-sm rounded-[20px] p-8 pb-7 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.6)] animate-modal-in",
-          dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm"
+          "w-full md:max-w-sm rounded-t-[20px] md:rounded-[20px] p-8 pb-7 md:shadow-[0_30px_60px_-20px_rgba(0,0,0,0.6)] animate-modal-in",
+          "max-h-[90vh] md:max-h-none overflow-y-auto",
+          dark ? "bg-[#2f2f2e] md:border md:border-zinc-800/80" : "bg-[#f8fafc] md:border md:border-[#e2e8f0] md:shadow-sm"
         )}
         onClick={(e) => e.stopPropagation()}
       >
@@ -686,7 +687,7 @@ function GatedCard({ dark, tokens, icon: Icon, title, subtitle, onSignIn }) {
       </div>
       <h2 className={cx("text-xl sm:text-2xl font-bold mb-2", tokens.text)}>{title}</h2>
       <p className={cx("text-sm mb-6 sm:mb-8", tokens.textMuted)}>{subtitle}</p>
-      <div className={cx("rounded-2xl p-4 sm:p-6 text-center sm:text-left", dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm")}>
+      <div className={cx("hidden sm:block rounded-2xl p-4 sm:p-6 text-center sm:text-left", dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm")}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {SIGNIN_ITEMS.map((item, i) => (
             <div key={i} className="flex items-center justify-center sm:justify-start gap-2.5">
@@ -696,6 +697,9 @@ function GatedCard({ dark, tokens, icon: Icon, title, subtitle, onSignIn }) {
           ))}
         </div>
         <Button onClick={onSignIn} className="w-full mt-5 sm:mt-6">Sign In</Button>
+      </div>
+      <div className="sm:hidden">
+        <SignInCarousel dark={dark} tokens={tokens} onSignIn={onSignIn} />
       </div>
     </div>
   );
@@ -711,13 +715,6 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
   const [alreadyOnTip, setAlreadyOnTip] = useState(null);
   const [tipKey, setTipKey] = useState(0);
   const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [drawerClosing, setDrawerClosing] = useState(false);
-  const drawerRef = useRef(null);
-  const closeDrawer = useCallback(() => {
-    setDrawerClosing(true);
-    setTimeout(() => { setMobileOpen(false); setDrawerClosing(false); }, 300);
-  }, []);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     onScroll();
@@ -736,13 +733,6 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
     const t = setTimeout(() => setAlreadyOnTip(null), 3000);
     return () => clearTimeout(t);
   }, [alreadyOnTip, tipKey]);
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const handleClick = (e) => { if (drawerRef.current && !drawerRef.current.contains(e.target)) closeDrawer(); };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [mobileOpen, closeDrawer]);
-  useEffect(() => { closeDrawer(); }, [page, closeDrawer]);
   const showAlreadyOn = (label) => {
     setAlreadyOnTip(null);
     requestAnimationFrame(() => { setAlreadyOnTip(label); setTipKey((k) => k + 1); });
@@ -775,16 +765,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setMobileOpen(true)}
-              className={cx(
-                "md:hidden h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200 -ml-1 touch-active-toggle",
-                dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
-              )}
-              aria-label="Open menu"
-            >
-              <Menu size={20} />
-            </button>
+
             {signedIn ? (
               <span className={cx("text-lg font-bold tracking-tight", tokens.text)}>
                 Career <span className="text-[var(--accent-500)]">Assistant</span>
@@ -850,6 +831,16 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
           </nav>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => { if (signedIn) setPage("account"); else openAuth(); }}
+              className={cx(
+                "md:hidden h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200 touch-active-toggle",
+                dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
+              )}
+              aria-label={signedIn ? "Account" : "Sign in"}
+            >
+              <User size={20} />
+            </button>
             {!signedIn && (
               <button
                 onClick={() => setDark((d) => !d)}
@@ -894,97 +885,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
           </div>
         </div>
       </header>
-      {(mobileOpen || drawerClosing) && (
-        <>
-          <div
-            className={cx(
-              "fixed inset-0 z-50 md:hidden",
-              drawerClosing ? "animate-fade-out" : ""
-            )}
-            style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
-            onClick={closeDrawer}
-          />
-          <div
-            ref={drawerRef}
-            className={cx(
-              "fixed top-0 left-0 z-50 h-full w-72 shadow-2xl md:hidden flex flex-col",
-              dark ? "bg-[#1a1a19]" : "bg-white",
-              drawerClosing ? "animate-drawer-out" : "animate-drawer-in"
-            )}
-          >
-            <div className={cx("flex items-center justify-between px-5 h-16 border-b", dark ? "border-white/10" : "border-slate-200")}>
-              {signedIn ? (
-                <span className={cx("text-lg font-bold tracking-tight", tokens.text)}>
-                  Career <span className="text-[var(--accent-500)]">Assistant</span>
-                </span>
-              ) : (
-                <button
-                  onClick={() => {
-                    setPage(hasResults ? "jobs" : "home");
-                    closeDrawer();
-                  }}
-                  className={cx("text-lg font-bold tracking-tight transition-all duration-200 hover:scale-110 touch-active-primary", tokens.text)}
-                >
-                  Career <span className="text-[var(--accent-500)]">Assistant</span>
-                  <span className="inline-block ml-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-500)] animate-logo-pulse align-middle" />
-                </button>
-              )}
-              <button
-                onClick={closeDrawer}
-                className={cx(
-                  "h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200 touch-active-toggle",
-                  dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
-                )}
-                aria-label="Close menu"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <nav className="flex-1 py-3">
-              {navItems.map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => {
-                    trackAction();
-                    setPage(item.key);
-                    closeDrawer();
-                  }}
-                  className={cx(
-                    "flex items-center gap-3 w-full px-5 py-3 text-sm font-medium transition-colors duration-200 touch-active-nav",
-                    page === item.key
-                      ? "text-[var(--accent-500)] bg-[var(--accent-500)]/10"
-                      : dark ? "text-slate-300 hover:bg-white/5" : "text-slate-700 hover:bg-slate-100"
-                  )}
-                >
-                  <item.icon size={17} />
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-            <div className={cx("px-5 py-4 border-t flex flex-col gap-2", dark ? "border-white/10" : "border-slate-200")}>
-              <button
-                onClick={() => setDark((d) => !d)}
-                className={cx(
-                  "flex items-center gap-3 w-full px-0 py-2 text-sm font-medium transition-colors duration-200 rounded-lg touch-active-toggle",
-                  dark ? "text-slate-300 hover:bg-white/5" : "text-slate-700 hover:bg-slate-100"
-                )}
-              >
-                {dark ? <Sun size={17} /> : <Moon size={17} />}
-                {dark ? "Light Mode" : "Dark Mode"}
-              </button>
-              {signedIn ? (
-                <Button variant="outline" dark={dark} onClick={() => { signOut(); closeDrawer(); }} className="w-full">
-                  <LogOut size={14} /> Sign Out
-                </Button>
-              ) : (
-                <Button onClick={() => { openAuth(); closeDrawer(); }} className="w-full">
-                  Sign In
-                </Button>
-              )}
-            </div>
-          </div>
-        </>
-      )}
+
       <div
         className="pointer-events-none fixed top-16 left-0 right-0 z-30 h-10"
         style={{
@@ -992,6 +893,112 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
         }}
       />
     </>
+  );
+}
+
+/* ---------------------------------------------------------
+   MOBILE BOTTOM TAB BAR
+--------------------------------------------------------- */
+
+function MobileTabBar({ dark, page, setPage, trackAction }) {
+  const tabs = [
+    { key: "jobs-nav", label: "My Jobs", icon: Briefcase },
+    { key: "skills", label: "Skills", icon: BarChart3 },
+    { key: "account", label: "Account", icon: User },
+  ];
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+      <div
+        className="flex items-center justify-around py-2 px-2"
+        style={{
+          background: dark ? "rgba(32,32,31,0.75)" : "rgba(255,255,255,0.75)",
+          backdropFilter: "blur(22px)",
+          WebkitBackdropFilter: "blur(22px)",
+        }}
+      >
+        {tabs.map((t) => {
+          const isActive = page === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => { trackAction(); setPage(t.key); }}
+              className={cx(
+                "flex flex-col items-center gap-0.5 py-1.5 px-5 rounded-xl transition-colors duration-200 touch-active-nav",
+                isActive ? "text-[var(--accent-500)]" : dark ? "text-[#c3c2b7]" : "text-slate-500"
+              )}
+            >
+              <t.icon size={20} />
+              <span className="text-[10px] font-medium leading-tight">{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+/* ---------------------------------------------------------
+   SIGN-IN CAROUSEL (mobile)
+--------------------------------------------------------- */
+
+function SignInCarousel({ dark, tokens, onSignIn }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollRef = useRef(null);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const idx = Math.round(scrollRef.current.scrollLeft / scrollRef.current.clientWidth);
+    setActiveIndex(idx);
+  };
+
+  return (
+    <div className="md:hidden">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth gap-4 pb-4 -mx-4 px-4"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {SIGNIN_ITEMS.map((item, i) => (
+          <div key={i} className="snap-center shrink-0 w-[80vw] max-w-xs">
+            <div className={cx(
+              "rounded-2xl p-6 flex flex-col items-center text-center min-h-[200px]",
+              dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm"
+            )}>
+              <div className={cx(
+                "h-12 w-12 rounded-2xl flex items-center justify-center mb-4",
+                dark ? "bg-[var(--accent-500)]/10 text-[var(--accent-400)]" : "bg-[var(--accent-50)] text-[var(--accent-600)]"
+              )}>
+                <item.icon size={22} />
+              </div>
+              <h3 className={cx("text-base font-bold mb-1", tokens.text)}>{item.title}</h3>
+              <p className={cx("text-sm", tokens.textMuted)}>{item.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-center gap-2 mt-2 mb-5">
+        {SIGNIN_ITEMS.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => {
+              scrollRef.current?.children[i]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+            }}
+            className={cx(
+              "h-2 rounded-full transition-all duration-300",
+              i === activeIndex ? "w-6 bg-[var(--accent-500)]" : "w-2 bg-zinc-600/30"
+            )}
+            aria-label={`Go to slide ${i + 1}`}
+          />
+        ))}
+      </div>
+
+      <Button onClick={onSignIn} className="w-full">
+        Sign In
+      </Button>
+    </div>
   );
 }
 
@@ -2468,7 +2475,7 @@ export default function CareerAssistantApp() {
   const isFullScreenPage = page === "analyzing";
 
   return (
-    <div data-accent={accent} className={cx("min-h-screen transition-colors duration-300", tokens.bg, tokens.text)}>
+    <div data-accent={accent} className={cx("min-h-screen pb-16 md:pb-0 transition-colors duration-300", tokens.bg, tokens.text)}>
       <ToastContainer dark={dark} />
       {!isFullScreenPage && (
         <Navbar
@@ -2476,6 +2483,12 @@ export default function CareerAssistantApp() {
           signedIn={signedIn} openAuth={openAuth} signOut={signOut} tokens={tokens}
           trackAction={trackAction} autoDropdown={autoDropdown}
           hasResults={!!results}
+        />
+      )}
+      {!isFullScreenPage && (
+        <MobileTabBar
+          dark={dark} page={page} setPage={setPage}
+          trackAction={trackAction}
         />
       )}
 
