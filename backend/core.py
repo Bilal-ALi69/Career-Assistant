@@ -9,50 +9,49 @@ from difflib import SequenceMatcher
 
 import numpy as np
 import ollama
+from groq import Groq
 from spellchecker import SpellChecker
 
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
-OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "")
 ollama_client = ollama.Client(host=OLLAMA_HOST)
-cloud_client = ollama.Client(
-    host="https://ollama.com",
-    headers={"Authorization": f"Bearer {OLLAMA_API_KEY}"} if OLLAMA_API_KEY else {},
-    timeout=30,
-)
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 DB_FILE = Path(__file__).with_name("career_cache.db")
 EMBED_MODEL = "all-minilm"
-GEN_MODEL = "qwen2.5:7b"
-LOCAL_FALLBACK_MODEL = "qwen2.5:1.5b"
+GEN_MODEL = "llama-3.1-8b-instant"
 TRAIT_SIMILARITY_THRESHOLD = 0.85
 
 
 def stream_chat(messages, cancel_event=None, **kwargs):
-    """Try cloud model first; fall back to local on auth/timeout errors."""
-    clients = [
-        (cloud_client, GEN_MODEL),
-        (ollama_client, LOCAL_FALLBACK_MODEL),
-    ]
+    """Generate text via Groq (fast cloud API). Falls back gracefully if Groq is unavailable."""
+    if groq_client is None:
+        raise RuntimeError("GROQ_API_KEY not set")
 
-    last_error = None
-    for client, model in clients:
-        try:
-            chunks = []
-            stream = client.chat(model=model, messages=messages, stream=True, **kwargs)
-            for chunk in stream:
-                if cancel_event is not None and cancel_event.is_set():
-                    raise GenerationCancelled()
-                text = chunk.get("message", {}).get("content", "")
-                if text:
-                    chunks.append(text)
-            return "".join(chunks)
-        except GenerationCancelled:
-            raise
-        except Exception as e:
-            last_error = e
-            continue
+    use_json = kwargs.pop("format", None) == "json"
+    groq_kwargs = dict(
+        model=GEN_MODEL,
+        messages=messages,
+        stream=True,
+        temperature=0.7,
+        max_tokens=2048,
+    )
+    if use_json:
+        groq_kwargs["response_format"] = {"type": "json_object"}
 
-    raise last_error or RuntimeError("All generation backends failed")
+    try:
+        stream = groq_client.chat.completions.create(**groq_kwargs)
+        chunks = []
+        for chunk in stream:
+            if cancel_event is not None and cancel_event.is_set():
+                raise GenerationCancelled()
+            text = chunk.choices[0].delta.content or ""
+            if text:
+                chunks.append(text)
+        return "".join(chunks)
+    except GenerationCancelled:
+        raise
 
 class GenerationCancelled(Exception):
     """Raised when a user cancels mid-generation."""
