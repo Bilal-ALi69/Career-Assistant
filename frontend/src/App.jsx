@@ -835,7 +835,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
               <button
                 onClick={() => setDark((d) => !d)}
                 className={cx(
-                  "h-9 w-9 rounded-lg flex items-center justify-center transition-colors duration-200 touch-active-toggle",
+                  "hidden md:inline-flex h-9 w-9 rounded-lg items-center justify-center transition-colors duration-200 touch-active-toggle",
                   dark ? "text-slate-300 hover:bg-zinc-800/60" : "text-slate-500 hover:bg-[#e2e8f0]"
                 )}
                 title={dark ? "Switch to light mode" : "Switch to dark mode"}
@@ -862,7 +862,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
                   Sign In
                 </button>
                 {autoDropdown && (
-                  <div onClick={(e) => e.stopPropagation()}>
+                  <div className="hidden md:block" onClick={(e) => e.stopPropagation()}>
                     <SignInDropdown
                       dark={dark}
                       tokens={tokens}
@@ -2475,7 +2475,7 @@ export default function CareerAssistantApp() {
   const isFullScreenPage = page === "analyzing";
 
   return (
-    <div data-accent={accent} className={cx("min-h-screen pb-16 md:pb-0 transition-colors duration-300", tokens.bg, tokens.text)}>
+    <div data-accent={accent} className={cx("min-h-screen pb-24 md:pb-0 transition-colors duration-300", tokens.bg, tokens.text)}>
       <ToastContainer dark={dark} />
       {!isFullScreenPage && (
         <Navbar
