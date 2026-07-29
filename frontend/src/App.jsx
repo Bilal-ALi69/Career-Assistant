@@ -2323,6 +2323,10 @@ export default function CareerAssistantApp() {
     localStorage.setItem(`career_assistant_accent_${em}`, accent);
   }, [accent]);
 
+  useEffect(() => {
+    document.documentElement.style.backgroundColor = dark ? "#20201f" : "#ffffff";
+    document.body.style.backgroundColor = dark ? "#20201f" : "#ffffff";
+  }, [dark]);
   // Persist accent to the backend profile so each user keeps their own colour.
   useEffect(() => {
     if (!token || !signedIn || !profile) return;
@@ -2476,7 +2480,7 @@ export default function CareerAssistantApp() {
   const isFullScreenPage = page === "analyzing";
 
   return (
-    <div data-accent={accent} className={cx("min-h-[100dvh] pb-40 md:pb-0 transition-colors duration-300", tokens.bg, tokens.text)}>
+    <div data-accent={accent} className={cx("min-h-[100dvh] pb-40 md:pb-0 overscroll-y-none transition-colors duration-300", tokens.bg, tokens.text)}>
       <ToastContainer dark={dark} />
       {!isFullScreenPage && (
         <Navbar
