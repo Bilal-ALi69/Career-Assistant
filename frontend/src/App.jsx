@@ -700,7 +700,20 @@ function GatedCard({ dark, tokens, icon: Icon, title, subtitle, onSignIn }) {
         <Button onClick={onSignIn} className="w-full mt-5 sm:mt-6">Sign In</Button>
       </div>
       <div className="sm:hidden">
-        <SignInCarousel dark={dark} tokens={tokens} onSignIn={onSignIn} />
+        <div className={cx("rounded-2xl p-5 flex flex-col gap-4", dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm")}>
+          {SIGNIN_ITEMS.map((item, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className={cx("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", dark ? "bg-[var(--accent-500)]/10 text-[var(--accent-400)]" : "bg-[var(--accent-50)] text-[var(--accent-600)]")}>
+                <item.icon size={18} />
+              </div>
+              <div className="text-left">
+                <p className={cx("text-sm font-semibold", tokens.text)}>{item.title}</p>
+                <p className={cx("text-xs", tokens.textMuted)}>{item.desc}</p>
+              </div>
+            </div>
+          ))}
+          <Button onClick={onSignIn} className="w-full mt-1">Sign In</Button>
+        </div>
       </div>
     </div>
   );
@@ -937,70 +950,6 @@ function MobileTabBar({ dark, page, setPage, trackAction }) {
         })}
       </div>
     </nav>
-  );
-}
-
-/* ---------------------------------------------------------
-   SIGN-IN CAROUSEL (mobile)
---------------------------------------------------------- */
-
-function SignInCarousel({ dark, tokens, onSignIn }) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const scrollRef = useRef(null);
-
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const idx = Math.round(scrollRef.current.scrollLeft / scrollRef.current.clientWidth);
-    setActiveIndex(idx);
-  };
-
-  return (
-    <div className="md:hidden">
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth gap-4 pb-4 -mx-4 px-4"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {SIGNIN_ITEMS.map((item, i) => (
-          <div key={i} className="snap-center shrink-0 w-[80vw] max-w-xs">
-            <div className={cx(
-              "rounded-2xl p-6 flex flex-col items-center text-center min-h-[200px]",
-              dark ? "bg-[#2f2f2e] border border-zinc-800/80" : "bg-[#f8fafc] border border-[#e2e8f0] shadow-sm"
-            )}>
-              <div className={cx(
-                "h-12 w-12 rounded-2xl flex items-center justify-center mb-4",
-                dark ? "bg-[var(--accent-500)]/10 text-[var(--accent-400)]" : "bg-[var(--accent-50)] text-[var(--accent-600)]"
-              )}>
-                <item.icon size={22} />
-              </div>
-              <h3 className={cx("text-base font-bold mb-1", tokens.text)}>{item.title}</h3>
-              <p className={cx("text-sm", tokens.textMuted)}>{item.desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex justify-center gap-2 mt-2 mb-5">
-        {SIGNIN_ITEMS.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => {
-              scrollRef.current?.children[i]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-            }}
-            className={cx(
-              "h-2 rounded-full transition-all duration-300",
-              i === activeIndex ? "w-6 bg-[var(--accent-500)]" : "w-2 bg-zinc-600/30"
-            )}
-            aria-label={`Go to slide ${i + 1}`}
-          />
-        ))}
-      </div>
-
-      <Button onClick={onSignIn} className="w-full">
-        Sign In
-      </Button>
-    </div>
   );
 }
 
