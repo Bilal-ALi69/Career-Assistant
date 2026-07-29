@@ -756,7 +756,7 @@ function Navbar({ dark, setDark, page, setPage, signedIn, openAuth, signOut, tok
   return (
     <>
       <header
-        className="sticky top-0 z-40"
+        className="fixed md:sticky top-0 z-40 w-full"
         style={{
           background: headerBg,
           WebkitBackdropFilter: `blur(${headerBlur})`,
@@ -2481,7 +2481,7 @@ export default function CareerAssistantApp() {
   const isFullScreenPage = page === "analyzing";
 
   return (
-    <div data-accent={accent} className={cx("flex flex-col md:block min-h-[100dvh] w-full relative overflow-y-auto md:overflow-y-visible pb-40 md:pb-0 overscroll-y-none transition-colors duration-300", tokens.bg, tokens.text)} style={{ WebkitOverflowScrolling: "touch" }}>
+    <div data-accent={accent} className={cx("flex flex-col md:block min-h-[100dvh] w-full relative overflow-y-auto md:overflow-y-visible pt-16 md:pt-0 pb-40 md:pb-0 overscroll-y-none transition-colors duration-300", tokens.bg, tokens.text)} style={{ WebkitOverflowScrolling: "touch" }}>
       <ToastContainer dark={dark} />
       {!isFullScreenPage && (
         <Navbar
