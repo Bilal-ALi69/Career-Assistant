@@ -76,12 +76,14 @@ body {
   margin: 0;
   width: 100%;
   overflow-x: hidden;
+  background-color: inherit;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 html {
   width: 100%;
   overflow-x: hidden;
+  background-color: #20201f;
 }
 
 ::-webkit-scrollbar {

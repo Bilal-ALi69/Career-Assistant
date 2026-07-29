@@ -2277,7 +2277,7 @@ export default function CareerAssistantApp() {
     const bg = dark ? "#20201f" : "#ffffff";
     document.documentElement.style.backgroundColor = bg;
     document.body.style.backgroundColor = bg;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg);
+    document.querySelectorAll('meta[name="theme-color"]').forEach((el) => el.setAttribute("content", bg));
   }, [dark]);
   // Persist accent to the backend profile so each user keeps their own colour.
   useEffect(() => {
