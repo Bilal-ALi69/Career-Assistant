@@ -2480,7 +2480,7 @@ export default function CareerAssistantApp() {
   const isFullScreenPage = page === "analyzing";
 
   return (
-    <div data-accent={accent} className={cx("min-h-[100dvh] pb-40 md:pb-0 overscroll-y-none transition-colors duration-300", tokens.bg, tokens.text)}>
+    <div data-accent={accent} className={cx("flex flex-col md:block min-h-[100dvh] pb-40 md:pb-0 overscroll-y-none transition-colors duration-300", tokens.bg, tokens.text)}>
       <ToastContainer dark={dark} />
       {!isFullScreenPage && (
         <Navbar
@@ -2498,17 +2498,17 @@ export default function CareerAssistantApp() {
       )}
 
       {page === "home" && (
-        <div key="page-home" className="animate-page-enter">
+        <div key="page-home" className="animate-page-enter grow">
           <HomePage dark={dark} tokens={tokens} signedIn={signedIn} openAuth={openAuth} goAnalyze={goAnalyze} profile={profile} initialValues={formValues} />
         </div>
       )}
       {page === "analyzing" && (
-        <div key="page-analyzing" className="animate-page-enter">
+        <div key="page-analyzing" className="animate-page-enter grow">
           <AnalyzingPage dark={dark} tokens={tokens} onDone={doneAnalyzing} onCancel={cancelAnalyzing} formValues={formValues} signedIn={signedIn} token={token} regenerateMode={regenerateMode} />
         </div>
       )}
       {page === "jobs" && (
-        <div key="page-jobs" className="animate-page-enter">
+        <div key="page-jobs" className="animate-page-enter grow">
           <JobsPage
             dark={dark} tokens={tokens} results={results}
             signedIn={signedIn} openAuth={openAuth}
@@ -2525,12 +2525,12 @@ export default function CareerAssistantApp() {
         </div>
       )}
       {page === "jobs-nav" && (
-        <div key="page-jobsnav" className="animate-page-enter">
+        <div key="page-jobsnav" className="animate-page-enter grow">
           <MyJobsPage dark={dark} tokens={tokens} signedIn={signedIn} openAuth={openAuth} onViewSession={(data) => { setResults(data); setPage("jobs"); }} results={results} email={email} />
         </div>
       )}
       {page === "skills" && (
-        <div key="page-skills" className="animate-page-enter">
+        <div key="page-skills" className="animate-page-enter grow">
           <SkillsTraitsPage dark={dark} tokens={tokens} signedIn={signedIn} openAuth={openAuth} profile={profile} onSaveProfile={saveProfilePatch} onGetSuggestions={(values) => {
           const recFields = new Set([
             "strengths", "weaknesses", "interests",
@@ -2552,7 +2552,7 @@ export default function CareerAssistantApp() {
         </div>
       )}
       {page === "account" && (
-        <div key="page-account" className="animate-page-enter">
+        <div key="page-account" className="animate-page-enter grow">
           <AccountPage
             dark={dark} setDark={setDark} accent={accent} setAccent={setAccent} tokens={tokens} signedIn={signedIn} openAuth={openAuth}
             profile={profile} account={account} email={email} token={token}
