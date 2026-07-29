@@ -906,7 +906,7 @@ function MobileTabBar({ dark, page, setPage, trackAction }) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 1rem)" }}>
       <div
         className="flex items-center justify-around py-2 px-2"
         style={{
@@ -2476,7 +2476,7 @@ export default function CareerAssistantApp() {
   const isFullScreenPage = page === "analyzing";
 
   return (
-    <div data-accent={accent} className={cx("min-h-screen pb-32 md:pb-0 transition-colors duration-300", tokens.bg, tokens.text)}>
+    <div data-accent={accent} className={cx("min-h-screen pb-36 md:pb-0 transition-colors duration-300", tokens.bg, tokens.text)}>
       <ToastContainer dark={dark} />
       {!isFullScreenPage && (
         <Navbar
