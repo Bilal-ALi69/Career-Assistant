@@ -76,6 +76,7 @@ function useTokens(dark) {
 }
 
 const cx = (...a) => a.filter(Boolean).join(" ");
+const formatTag = (tag) => tag.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 /* ---------------------------------------------------------
    SMALL PRIMITIVES
@@ -586,12 +587,12 @@ function ExpandedCard({ dark, tokens, job, onClose }) {
                   "inline-block px-2.5 py-1 rounded-lg text-xs font-medium",
                   dark ? "bg-zinc-800 text-slate-300" : "bg-[#e2e8f0] text-slate-600"
                 )}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+                >
+                  {formatTag(tag)}
+                </span>
+              ))}
+            </div>
+          )}
 
         <div className={cx("rounded-xl p-4 mb-4", dark ? "bg-[#131313]" : "bg-white border border-[#e2e8f0]")}>
           <p className={cx("text-xs font-semibold mb-2", tokens.textMuted)}>Est. Salary</p>
@@ -905,7 +906,7 @@ function MobileTabBar({ dark, page, setPage, trackAction }) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-[env(safe-area-inset-bottom)]">
       <div
         className="flex items-center justify-around py-2 px-2"
         style={{
@@ -1372,7 +1373,7 @@ function JobsPage({ dark, tokens, results, signedIn, openAuth, savedJobIds, onTo
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
+    <div className="max-w-5xl mx-auto md:px-6 px-4 py-12">
       <h1 className={cx("text-2xl font-bold", tokens.text)}>Recommended Jobs For You</h1>
       <p className={cx("text-sm mt-1", tokens.textMuted)}>
         {results ? "Based on your skills and interests" : "Demo data — connect your backend to see real results"}
@@ -1394,7 +1395,7 @@ function JobsPage({ dark, tokens, results, signedIn, openAuth, savedJobIds, onTo
             <div
               key={i}
               onClick={() => onExpandCard(job)}
-              className={cx("group rounded-2xl p-5 flex items-start justify-between gap-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_8px_30px_-4px_rgba(var(--accent-rgb),0.15)] cursor-pointer", tokens.card)}
+              className={cx("group rounded-2xl md:p-5 p-5 flex items-start justify-between gap-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_8px_30px_-4px_rgba(var(--accent-rgb),0.15)] cursor-pointer", tokens.card)}
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1.5">
@@ -1402,7 +1403,7 @@ function JobsPage({ dark, tokens, results, signedIn, openAuth, savedJobIds, onTo
                   {job.top && <Pill dark={dark} tone="blue">Top Match</Pill>}
                 </div>
                 <h3 className={cx("font-semibold text-lg", tokens.text)}>{job.title}</h3>
-                <p className={cx("text-sm mt-1 max-w-xl", tokens.textMuted)}>{job.desc}</p>
+                <p className={cx("text-sm mt-1 md:max-w-xl", tokens.textMuted)}>{job.desc}</p>
                 {job.tags && job.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2.5">
                     {job.tags.map((tag, ti) => (
@@ -1413,7 +1414,7 @@ function JobsPage({ dark, tokens, results, signedIn, openAuth, savedJobIds, onTo
                           dark ? "bg-zinc-800/80 text-slate-300 group-hover:bg-zinc-700/80" : "bg-[#e2e8f0] text-slate-600 group-hover:bg-[#cbd5e1]"
                         )}
                       >
-                        {tag}
+                        {formatTag(tag)}
                       </span>
                     ))}
                   </div>
@@ -1457,7 +1458,7 @@ function MyJobsPage({ dark, tokens, signedIn, openAuth, onViewSession, results, 
   if (!signedIn) {
     if (results) {
       return (
-        <div className="max-w-5xl mx-auto px-6 py-12">
+        <div className="max-w-5xl mx-auto md:px-6 px-4 py-12">
           <h1 className={cx("text-2xl font-bold", tokens.text)}>My Jobs</h1>
           <p className={cx("text-sm mt-1", tokens.textMuted)}>Sign in to save and track your job sessions.</p>
           <div className="mt-6">
@@ -2475,7 +2476,7 @@ export default function CareerAssistantApp() {
   const isFullScreenPage = page === "analyzing";
 
   return (
-    <div data-accent={accent} className={cx("min-h-screen pb-24 md:pb-0 transition-colors duration-300", tokens.bg, tokens.text)}>
+    <div data-accent={accent} className={cx("min-h-screen pb-32 md:pb-0 transition-colors duration-300", tokens.bg, tokens.text)}>
       <ToastContainer dark={dark} />
       {!isFullScreenPage && (
         <Navbar
