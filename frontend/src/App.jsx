@@ -2274,8 +2274,10 @@ export default function CareerAssistantApp() {
   }, [accent]);
 
   useEffect(() => {
-    document.documentElement.style.backgroundColor = dark ? "#20201f" : "#ffffff";
-    document.body.style.backgroundColor = dark ? "#20201f" : "#ffffff";
+    const bg = dark ? "#20201f" : "#ffffff";
+    document.documentElement.style.backgroundColor = bg;
+    document.body.style.backgroundColor = bg;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg);
   }, [dark]);
   // Persist accent to the backend profile so each user keeps their own colour.
   useEffect(() => {
