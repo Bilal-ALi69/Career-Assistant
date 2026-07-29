@@ -2430,7 +2430,7 @@ export default function CareerAssistantApp() {
   const isFullScreenPage = page === "analyzing";
 
   return (
-    <div data-accent={accent} className={cx("mobile-scroll-container flex flex-col md:block min-h-[100dvh] w-full pb-40 md:pb-0 overscroll-y-none transition-colors duration-300", tokens.bg, tokens.text, !isFullScreenPage && "pt-16")}>
+    <div data-accent={accent} className={cx("flex flex-col md:block min-h-[100dvh] w-full pb-40 md:pb-0 overscroll-y-none transition-colors duration-300", tokens.bg, tokens.text, !isFullScreenPage && "pt-16")}>
       <ToastContainer dark={dark} />
       {!isFullScreenPage && (
         <Navbar
