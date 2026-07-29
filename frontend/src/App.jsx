@@ -906,18 +906,19 @@ function MobileTabBar({ dark, page, setPage, trackAction }) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 1rem)" }}>
-      <div
-        className="flex items-center justify-around py-2 px-2"
-        style={{
-          background: dark
-            ? (scrolled ? "rgba(32,32,31,0.75)" : "rgba(32,32,31,0.35)")
-            : (scrolled ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.35)"),
-          backdropFilter: scrolled ? "blur(22px)" : "blur(14px)",
-          WebkitBackdropFilter: scrolled ? "blur(22px)" : "blur(14px)",
-          transition: "background 0.4s ease, backdrop-filter 0.4s ease",
-        }}
-      >
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+      style={{
+        paddingBottom: "max(env(safe-area-inset-bottom), 1.5rem)",
+        background: dark
+          ? (scrolled ? "rgba(32,32,31,0.85)" : "rgba(32,32,31,0.45)")
+          : (scrolled ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.45)"),
+        backdropFilter: scrolled ? "blur(22px)" : "blur(16px)",
+        WebkitBackdropFilter: scrolled ? "blur(22px)" : "blur(16px)",
+        transition: "background 0.4s ease, backdrop-filter 0.4s ease",
+      }}
+    >
+      <div className="flex items-center justify-around py-2 px-2">
         {tabs.map((t) => {
           const isActive = page === t.key;
           return (
@@ -2480,7 +2481,7 @@ export default function CareerAssistantApp() {
   const isFullScreenPage = page === "analyzing";
 
   return (
-    <div data-accent={accent} className={cx("flex flex-col md:block min-h-[100dvh] pb-40 md:pb-0 overscroll-y-none transition-colors duration-300", tokens.bg, tokens.text)}>
+    <div data-accent={accent} className={cx("flex flex-col md:block min-h-[100dvh] w-full overflow-x-hidden pb-40 md:pb-0 overscroll-y-none transition-colors duration-300", tokens.bg, tokens.text)}>
       <ToastContainer dark={dark} />
       {!isFullScreenPage && (
         <Navbar
