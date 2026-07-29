@@ -333,3 +333,10 @@ button, a, [role="button"] {
     opacity: 0.6;
   }
 }
+
+@supports (-webkit-touch-callout: none) {
+  .mobile-scroll-container {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 9rem) !important;
+    min-height: -webkit-fill-available;
+  }
+}
