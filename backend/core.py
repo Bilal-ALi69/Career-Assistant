@@ -57,7 +57,7 @@ class GenerationCancelled(Exception):
     """Raised when a user cancels mid-generation."""
 
 
-MIN_JOBS = 3
+MIN_JOBS = 4
 SPELLCHECK_CONFIDENCE_THRESHOLD = 0.85
 SPELLCHECK_WHITELIST = {
     "python", "javascript", "html", "css", "sql", "ux", "ui", "api",
@@ -139,9 +139,14 @@ def init_db(conn):
             CREATE TABLE IF NOT EXISTS jobs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT UNIQUE NOT NULL,
-                description TEXT NOT NULL
+                description TEXT NOT NULL,
+                estimated_salary TEXT DEFAULT '—'
             )
         ''')
+        try:
+            conn.execute("ALTER TABLE jobs ADD COLUMN estimated_salary TEXT DEFAULT '—'")
+        except Exception:
+            pass
         conn.execute('''
             CREATE TABLE IF NOT EXISTS job_strengths (
                 job_id INTEGER NOT NULL,
@@ -334,12 +339,12 @@ def resolve_traits(conn, text: str, table: str) -> tuple[list[int], list[str], b
 
 # -------------------------------------------------------- Job persistence
 
-def upsert_job(conn, title: str, description: str) -> int:
+def upsert_job(conn, title: str, description: str, estimated_salary: str = "—") -> int:
     with conn:
         conn.execute(
-            "INSERT INTO jobs (title, description) VALUES (?, ?) "
-            "ON CONFLICT(title) DO UPDATE SET description = excluded.description",
-            (title, description),
+            "INSERT INTO jobs (title, description, estimated_salary) VALUES (?, ?, ?) "
+            "ON CONFLICT(title) DO UPDATE SET description = excluded.description, estimated_salary = excluded.estimated_salary",
+            (title, description, estimated_salary),
         )
     row = conn.execute("SELECT id FROM jobs WHERE title = ?", (title,)).fetchone()
     return row["id"]
@@ -378,7 +383,7 @@ def persist_generated_jobs(
     jobs: list[dict],
 ):
     for job in jobs:
-        job_id = upsert_job(conn, job["title"], job["description"])
+        job_id = upsert_job(conn, job["title"], job["description"], job.get("estimated_salary", "—"))
         link_job_traits(conn, job_id, strength_ids, weakness_ids, interest_ids)
 
 
@@ -403,7 +408,7 @@ def fetch_linked_jobs(
 
     rows = conn.execute(
         f"""
-        SELECT j.id, j.title, j.description
+        SELECT j.id, j.title, j.description, j.estimated_salary
         FROM jobs j
         WHERE (
             SELECT COUNT(DISTINCT js.strength_id)
@@ -434,7 +439,7 @@ def fetch_linked_jobs(
                 "Matched your strengths, weaknesses, and interests against stored career paths "
                 "in the knowledge base."
             ),
-            "estimated_salary": "—",
+            "estimated_salary": row["estimated_salary"] or "—",
             "match_breakdown": [
                 "Your traits match this role's known requirements from our career database.",
                 "This role consistently appears for candidates with similar profiles.",
