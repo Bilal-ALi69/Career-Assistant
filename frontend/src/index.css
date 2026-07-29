@@ -318,6 +318,9 @@ button, a, [role="button"] {
 }
 
 @media (hover: none) and (pointer: coarse) {
+  html, body {
+    overscroll-behavior-y: contain;
+  }
   .touch-active-primary:active {
     opacity: 0.8;
     transform: scale(0.97);
