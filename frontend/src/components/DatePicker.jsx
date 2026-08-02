@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { accentAttr } from "../lib/portalAccent";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
@@ -114,9 +115,11 @@ export default function DatePicker({ value, onChange, dark, tokens, placeholder 
             <div
               className={cx("md:hidden fixed inset-0 z-[100]", dark ? "bg-black/60" : "bg-black/40")}
               onMouseDown={close}
+              data-accent={accentAttr()}
             />
             <div
               onMouseDown={(e) => e.stopPropagation()}
+              data-accent={accentAttr()}
               className={cx(
                 "fixed md:absolute bottom-0 md:bottom-auto inset-x-0 md:inset-x-auto w-full md:w-[280px]",
                 "z-[100] md:z-50 mt-0 md:mt-1.5 rounded-t-2xl md:rounded-xl border p-3",

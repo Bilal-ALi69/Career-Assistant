@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
+import { accentAttr } from "../lib/portalAccent";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
@@ -149,7 +150,7 @@ export default function CustomSelect({
             })}
           </ul>
           {createPortal(
-            <div className="md:hidden fixed inset-0 z-[100]" onMouseDown={close}>
+            <div className="md:hidden fixed inset-0 z-[100]" onMouseDown={close} data-accent={accentAttr()}>
               <div
                 className={cx("absolute inset-0", dark ? "bg-black/60" : "bg-black/40")}
                 onClick={close}

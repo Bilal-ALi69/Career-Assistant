@@ -8,6 +8,7 @@ import {
   XCircle, Save, Sunrise, Sunset, Clock, RefreshCw, Menu, X,
 } from "lucide-react";
 import { createPortal } from "react-dom";
+import { accentAttr } from "./lib/portalAccent";
 import { API_BASE, ApiError, login, register, getAccount, deleteAccount, getProfile, updateProfile, fetchRecommendations, fetchRegeneratedRecommendations, cancelRecommendation, fetchWorkdaySummary } from "./lib/api";
 import { PROFILE_FIELD_GROUPS } from "./lib/profileFields";
 import { loadSavedJobs, persistSavedJobs, jobId } from "./lib/savedJobs";
@@ -1960,44 +1961,20 @@ function SkillsTraitsPage({ dark, tokens, signedIn, openAuth, profile, onSavePro
         ))}
       </aside>
       <div>
-        {/* Mobile: horizontal chip bar + drawer toggle */}
+        {/* Mobile: category drawer toggle */}
         <div className="md:hidden mb-5">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Browse skill categories"
-              onClick={() => setDrawerOpen(true)}
-              className={cx(
-                "shrink-0 h-10 w-10 rounded-xl border flex items-center justify-center transition-colors touch-active-ghost",
-                dark ? "bg-[#2f2f2e] border-zinc-700/80 text-slate-300" : "bg-white border-[#e2e8f0] text-slate-600"
-              )}
-            >
-              <Menu size={18} />
-            </button>
-            <div className="flex-1 overflow-x-auto no-scrollbar flex items-center gap-2 py-0.5">
-              {SKILLS_TABS.map((t) => {
-                const Icon = SKILLS_TAB_ICONS[t];
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTab(t)}
-                    className={cx(
-                      "shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-[13px] font-medium transition-colors touch-active-ghost",
-                      tab === t
-                        ? "bg-[var(--accent-600)] text-white shadow-sm"
-                        : dark
-                          ? "bg-[#2f2f2e] border border-zinc-700/60 text-slate-400"
-                          : "bg-[#f1f5f9] border border-[#e2e8f0] text-slate-600"
-                    )}
-                  >
-                    {Icon && <Icon size={14} />}
-                    {t}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <button
+            type="button"
+            aria-label="Browse skill categories"
+            onClick={() => setDrawerOpen(true)}
+            className={cx(
+              "inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border text-sm font-medium transition-colors touch-active-ghost",
+              dark ? "bg-[#2f2f2e] border-zinc-700/80 text-slate-300" : "bg-white border-[#e2e8f0] text-slate-600"
+            )}
+          >
+            <Menu size={18} />
+            Categories
+          </button>
         </div>
 
         {tab === "Overview" && (() => {
@@ -2044,7 +2021,7 @@ function SkillsTraitsPage({ dark, tokens, signedIn, openAuth, profile, onSavePro
 
       {/* Mobile: left slide-out drawer */}
       {drawerOpen && createPortal(
-        <div className="md:hidden">
+        <div className="md:hidden" data-accent={accentAttr()}>
           <div
             className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-overlay-in"
             onMouseDown={() => setDrawerOpen(false)}
