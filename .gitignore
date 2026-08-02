@@ -12,6 +12,7 @@ venv/
 *.db
 *.db-shm
 *.db-wal
+backend/data/
 
 # Frontend
 frontend/node_modules/

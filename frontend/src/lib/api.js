@@ -35,7 +35,10 @@ export class ApiError extends Error {
   get userMessage() {
     if (this.isNetworkError) return "Unable to connect. Please check your internet connection and try again.";
     if (this.isTimeout) return "The request took too long. Please try again.";
-    if (this.isUnauthorized) return "Your session has expired. Please sign in again.";
+    if (this.isUnauthorized) {
+      if (typeof this.detail === "string" && this.detail.trim()) return this.detail;
+      return "Your session has expired. Please sign in again.";
+    }
     if (this.isForbidden) return "You don't have permission to perform this action.";
     if (this.isNotFound) return "The requested resource was not found.";
     if (this.isRateLimited) return "Too many requests. Please wait a moment and try again.";

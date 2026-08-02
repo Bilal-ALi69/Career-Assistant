@@ -15,7 +15,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-USER_DB_FILE = Path(__file__).with_name("user_data.db")
+USER_DB_DIR = Path(os.getenv("DATA_DIR", Path(__file__).with_name("data")))
+USER_DB_DIR.mkdir(parents=True, exist_ok=True)
+USER_DB_FILE = USER_DB_DIR / "user_data.db"
 
 jwt_secret = os.getenv("JWT_SECRET")
 if not jwt_secret:
@@ -33,6 +35,8 @@ TOKEN_EXPIRY_SECONDS = int(os.getenv("TOKEN_EXPIRY_SECONDS", str(60 * 60 * 24)))
 BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS", "12"))
 
 PROFILE_DEFAULTS = {
+    "full_name": "",
+    "phone_number": "",
     "hobbies": "",
     "disabilities": "None",
     "country": "All",
@@ -59,6 +63,9 @@ PROFILE_DEFAULTS = {
     "values": "",
     "work_authorization": "",
     "accent_color": "gold",
+    "strengths": "",
+    "weaknesses": "",
+    "interests": "",
     # Kept so profiles saved by the previous API version remain readable.
     "education_level": "",
     "location": "",

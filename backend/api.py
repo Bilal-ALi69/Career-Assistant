@@ -203,6 +203,8 @@ class APIModel(BaseModel):
 
 class ProfileSurveyRequest(APIModel):
     """Optional account-profile fields used for personalized recommendations."""
+    full_name: ProfileText = ""
+    phone_number: ProfileText = ""
     hobbies: ProfileText = ""
     disabilities: ProfileText = "None"
     country: ProfileText = "All"
@@ -229,6 +231,9 @@ class ProfileSurveyRequest(APIModel):
     values: ProfileText = ""
     work_authorization: ProfileText = ""
     accent_color: ProfileText = "gold"
+    strengths: ProfileText = ""
+    weaknesses: ProfileText = ""
+    interests: ProfileText = ""
     # Backwards-compatible names accepted from the existing sample client.
     education_level: ProfileText = ""
     location: ProfileText = ""

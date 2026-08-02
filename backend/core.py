@@ -18,7 +18,10 @@ ollama_client = ollama.Client(host=OLLAMA_HOST)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
-DB_FILE = Path(__file__).with_name("career_cache.db")
+DATA_DIR = Path(os.getenv("DATA_DIR", Path(__file__).with_name("data")))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+DB_FILE = DATA_DIR / "career_cache.db"
 EMBED_MODEL = "all-minilm"
 GEN_MODEL = "llama-3.1-8b-instant"
 TRAIT_SIMILARITY_THRESHOLD = 0.85
@@ -555,6 +558,8 @@ def generate_job_list(strengths: str, weaknesses: str, interests: str, cancel_ev
 
 
 PROFILE_FIELD_LABELS = {
+    "full_name": "Full name",
+    "phone_number": "Phone number",
     "hobbies": "Hobbies",
     "disabilities": "Disabilities or accessibility needs",
     "country": "Country where the user wants to work",
@@ -580,6 +585,9 @@ PROFILE_FIELD_LABELS = {
     "notice_period": "Notice period or availability to start",
     "values": "Personal or workplace values",
     "work_authorization": "Work authorization status",
+    "strengths": "Key strengths",
+    "weaknesses": "Areas for improvement",
+    "interests": "Interests",
     "education_level": "Education level (legacy profile field)",
     "location": "Location (legacy profile field)",
 }
