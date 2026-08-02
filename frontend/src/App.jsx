@@ -2088,9 +2088,9 @@ function SkillsTraitsPage({ dark, tokens, signedIn, openAuth, profile, onSavePro
 
 function SettingsRow({ tokens, label, value, valueClass, onClick }) {
   return (
-    <button onClick={onClick} className={cx("w-full flex items-center justify-between py-2.5 text-sm text-left", tokens.hover, "rounded-lg px-1.5 -mx-1.5")}>
-      <span className={tokens.textMuted}>{label}</span>
-      <span className={cx("font-medium", valueClass || tokens.text)}>{value} ›</span>
+    <button onClick={onClick} className={cx("w-full flex items-center justify-between gap-3 py-3 text-sm text-left", tokens.hover, "rounded-lg px-1.5 -mx-1.5")}>
+      <span className={cx("min-w-0 truncate", tokens.textMuted)}>{label}</span>
+      <span className={cx("font-medium shrink-0", valueClass || tokens.text)}>{value} ›</span>
     </button>
   );
 }
@@ -2160,7 +2160,7 @@ function AccountPage({ dark, setDark, accent, setAccent, tokens, signedIn, openA
   if (showPersonalEdit) {
     const personalGroup = PROFILE_FIELD_GROUPS.find((g) => g.key === "personal");
     return (
-      <div className="max-w-5xl mx-auto px-6 py-10 animate-page-enter">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 pb-24 sm:pb-10 animate-page-enter">
         <button
           onClick={() => setShowPersonalEdit(false)}
           className={cx("flex items-center gap-1.5 text-sm font-medium mb-6 transition-colors", tokens.textMuted, tokens.hover, "rounded-lg px-2 py-1 -ml-2")}
@@ -2177,31 +2177,31 @@ function AccountPage({ dark, setDark, accent, setAccent, tokens, signedIn, openA
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 pb-24 sm:pb-10">
       <h1 className={cx("text-xl font-bold", tokens.text)}>Account Settings</h1>
       <p className={cx("text-sm mb-6", tokens.textMuted)}>Manage your profile, security and preferences.</p>
 
-      <div className={cx("rounded-2xl p-6 mb-5 flex items-center justify-between", tokens.card)}>
-        <div className="flex items-center gap-5">
+      <div className={cx("rounded-2xl p-5 sm:p-6 mb-4 sm:mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4", tokens.card)}>
+        <div className="flex items-center gap-4 min-w-0">
           <div className="h-14 w-14 rounded-full bg-[var(--accent-600)] text-white flex items-center justify-center font-bold text-lg shrink-0">
             {initials(p.full_name, resolvedEmail)}
           </div>
           <div className="min-w-0">
-            <p className={cx("font-semibold text-base", tokens.text)}>{displayName}</p>
-            <p className={cx("text-xs mt-0.5", tokens.textMuted)}>
+            <p className={cx("truncate font-semibold text-base", tokens.text)}>{displayName}</p>
+            <p className={cx("truncate text-xs mt-0.5", tokens.textMuted)}>
               {resolvedEmail || "—"}
               {joined && <><span className="mx-1.5 opacity-40">·</span>Joined {joined}</>}
             </p>
           </div>
         </div>
-        <Button variant="outline" dark={dark} onClick={() => setShowPersonalEdit(true)}><Pencil size={13} /> Edit Profile</Button>
+        <Button variant="outline" dark={dark} onClick={() => setShowPersonalEdit(true)} className="w-full sm:w-auto shrink-0"><Pencil size={13} /> Edit Profile</Button>
       </div>
 
-      <div className="mb-5">
+      <div className="mb-4 sm:mb-5">
         <InfoCard tokens={tokens} dark={dark} icon={Sun} title="Appearance">
           <button
             onClick={() => setShowAppearance(!showAppearance)}
-            className={cx("w-full flex items-center justify-between py-2.5 text-sm text-left", tokens.hover, "rounded-lg px-1.5 -mx-1.5 transition-colors")}
+            className={cx("w-full flex items-center justify-between py-3 text-sm text-left", tokens.hover, "rounded-lg px-1.5 -mx-1.5 transition-colors")}
           >
             <span className={tokens.textMuted}>Theme & Accent</span>
             <span className={cx("font-medium flex items-center gap-1 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]", tokens.text, showAppearance && "rotate-90")}>
@@ -2212,8 +2212,8 @@ function AccountPage({ dark, setDark, accent, setAccent, tokens, signedIn, openA
           <div className={cx("accordion-content", showAppearance && "open")}>
             <div>
               <div className="pt-1 pb-1 pl-1">
-                <div className="flex items-end gap-5">
-                  <div className="min-w-[120px]">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-5">
+                  <div className="sm:min-w-[120px]">
                     <label className={cx("text-xs font-medium block mb-1.5", tokens.textMuted)}>Theme</label>
                     <CustomSelect
                       value={dark ? "dark" : "light"}
@@ -2227,9 +2227,9 @@ function AccountPage({ dark, setDark, accent, setAccent, tokens, signedIn, openA
                     />
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <label className={cx("text-xs font-medium block mb-1.5", tokens.textMuted)}>Accent Color</label>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2.5">
                       {[
                         { key: "blue",   color: "#3b82f6" },
                         { key: "green",  color: "#10b981" },
@@ -2242,7 +2242,7 @@ function AccountPage({ dark, setDark, accent, setAccent, tokens, signedIn, openA
                           key={c.key}
                           onClick={() => setAccent(c.key)}
                           className={cx(
-                            "relative h-8 w-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110",
+                            "relative h-9 w-9 sm:h-8 sm:w-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110",
                             accent === c.key
                               ? dark
                                 ? "ring-2 ring-white ring-offset-2 ring-offset-[#2f2f2e] shadow-[0_0_12px_rgba(var(--accent-rgb),0.4)]"
@@ -2273,7 +2273,7 @@ function AccountPage({ dark, setDark, accent, setAccent, tokens, signedIn, openA
         </InfoCard>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-5">
+      <div className="grid sm:grid-cols-2 gap-4 sm:gap-5">
         <InfoCard tokens={tokens} dark={dark} icon={Shield} title="Security">
           <SettingsRow tokens={tokens} label="Change Password" value="" onClick={() => setOpenModal("password")} />
           <SettingsRow
@@ -2285,13 +2285,13 @@ function AccountPage({ dark, setDark, accent, setAccent, tokens, signedIn, openA
           <SettingsRow tokens={tokens} label="Login Sessions" value="" onClick={() => setOpenModal("sessions")} />
         </InfoCard>
         <InfoCard tokens={tokens} dark={dark} icon={SlidersHorizontal} title="Account Actions">
-          <button onClick={handleDownloadData} className={cx("w-full flex items-center gap-2.5 py-2.5 text-sm font-medium rounded-lg transition-colors", tokens.hover, tokens.text)}>
+          <button onClick={handleDownloadData} className={cx("w-full flex items-center gap-2.5 py-3 text-sm font-medium rounded-lg transition-colors", tokens.hover, tokens.text)}>
             <Download size={14} className="opacity-70" /> Download My Data
           </button>
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className={cx("w-full flex items-center gap-2.5 py-2.5 text-sm font-medium rounded-lg transition-colors", dark ? "hover:bg-red-500/10 text-red-400" : "hover:bg-red-50 text-red-600", "disabled:opacity-50")}
+            className={cx("w-full flex items-center gap-2.5 py-3 text-sm font-medium rounded-lg transition-colors", dark ? "hover:bg-red-500/10 text-red-400" : "hover:bg-red-50 text-red-600", "disabled:opacity-50")}
           >
             <Trash2 size={14} className="opacity-70" />
             {deleting ? "Deleting…" : confirmingDelete ? "Click again to confirm" : "Delete Account"}
