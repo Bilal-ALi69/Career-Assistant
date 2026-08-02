@@ -1556,17 +1556,18 @@ function OverviewSection({ title, children }) {
   return (
     <div className="mb-8 last:mb-0">
       <h3 className={cx("text-xs font-semibold uppercase tracking-wider mb-3", "text-slate-500")}>{title}</h3>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{children}</div>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">{children}</div>
     </div>
   );
 }
 
-function OverviewCardEmpty({ tokens, dark, icon: Icon, label, tab, onNav }) {
+function OverviewCardEmpty({ tokens, dark, icon: Icon, label, tab, onNav, className = "" }) {
   return (
     <button
       onClick={() => onNav(tab)}
       className={cx(
         "rounded-2xl p-5 border-2 border-dashed flex flex-col items-center justify-center gap-2 min-h-[140px] transition-all duration-200 group cursor-pointer",
+        className,
         dark
           ? "border-zinc-700/60 hover:border-[var(--accent-500)]/50 hover:bg-[var(--accent-500)]/5"
           : "border-[#e2e8f0] hover:border-[var(--accent-400)]/50 hover:bg-[var(--accent-50)]"
@@ -1585,12 +1586,13 @@ function OverviewCardEmpty({ tokens, dark, icon: Icon, label, tab, onNav }) {
   );
 }
 
-function OverviewCardFilled({ tokens, dark, icon: Icon, label, tab, onNav, children }) {
+function OverviewCardFilled({ tokens, dark, icon: Icon, label, tab, onNav, children, className = "" }) {
   return (
     <button
       onClick={() => onNav(tab)}
       className={cx(
         "rounded-2xl p-5 text-left transition-all duration-200 group cursor-pointer w-full",
+        className,
         tokens.card,
         dark ? "hover:border-[var(--accent-500)]/40 hover:shadow-[0_0_20px_-4px_rgba(var(--accent-rgb),0.12)]" : "hover:border-[var(--accent-300)]"
       )}
@@ -1640,7 +1642,7 @@ function SkillsOverview({ dark, tokens, profile, onNav }) {
     {
       title: "Core Identity",
       cards: [
-        { field: PROFILE_KEY_FIELDS[0], render: () => <p className={cx("text-sm", tokens.text)}>{p.location}</p> },
+        { field: PROFILE_KEY_FIELDS[0], render: () => <p className={cx("text-sm", tokens.text)}>{p.location}</p>, mobileHidden: true },
         { field: PROFILE_KEY_FIELDS[1], render: () => <p className={cx("text-sm whitespace-pre-line leading-relaxed", tokens.textMuted)}>{p.education}</p> },
         { field: PROFILE_KEY_FIELDS[2], render: () => <TagRow tags={toTags(p.languages)} dark={dark} /> },
       ],
@@ -1765,14 +1767,15 @@ function SkillsOverview({ dark, tokens, profile, onNav }) {
       {/* ── Sectioned card grid ── */}
       {sections.map((section) => (
         <OverviewSection key={section.title} title={section.title}>
-          {section.cards.map(({ field, render }) => {
+          {section.cards.map(({ field, render, mobileHidden }) => {
             const val = p[field.key];
             const isFilled = val && String(val).trim() && String(val).trim() !== "None";
+            const className = mobileHidden ? "hidden sm:block" : undefined;
             if (!isFilled) {
-              return <OverviewCardEmpty key={field.key} tokens={tokens} dark={dark} icon={field.icon} label={field.label} tab={field.tab} onNav={onNav} />;
+              return <OverviewCardEmpty key={field.key} className={className} tokens={tokens} dark={dark} icon={field.icon} label={field.label} tab={field.tab} onNav={onNav} />;
             }
             return (
-              <OverviewCardFilled key={field.key} tokens={tokens} dark={dark} icon={field.icon} label={field.label} tab={field.tab} onNav={onNav}>
+              <OverviewCardFilled key={field.key} className={className} tokens={tokens} dark={dark} icon={field.icon} label={field.label} tab={field.tab} onNav={onNav}>
                 {render(field)}
               </OverviewCardFilled>
             );

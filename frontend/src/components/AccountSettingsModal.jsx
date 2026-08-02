@@ -1,16 +1,18 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Loader2, X } from "lucide-react";
 import PasswordInput from "./PasswordInput";
 import PasswordStrengthMeter from "./PasswordStrengthMeter";
 import CustomSelect from "./CustomSelect";
 import CustomCheckbox from "./CustomCheckbox";
 import { changePassword, setTwoFactor, updateProfile, ApiError } from "../lib/api";
+import { accentAttr } from "../lib/portalAccent";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
 function ModalShell({ dark, tokens, title, onClose, children }) {
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 animate-overlay-in" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 animate-overlay-in" onClick={onClose} data-accent={accentAttr()}>
       <div
         className={cx("w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-modal-in", dark ? "bg-[#2f2f2e] border border-zinc-800" : "bg-[#f8fafc] border border-[#e2e8f0]")}
         onClick={(e) => e.stopPropagation()}
@@ -23,7 +25,8 @@ function ModalShell({ dark, tokens, title, onClose, children }) {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
