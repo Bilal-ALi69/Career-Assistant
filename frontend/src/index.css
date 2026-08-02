@@ -136,6 +136,15 @@ html {
   animation: drawerIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* ── Mobile bottom sheet (viewport-locked, fixed positioning) ── */
+@keyframes sheetIn {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.animate-sheet-in {
+  animation: sheetIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* ── Generic fade + lift ── */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(10px); }
@@ -337,4 +346,13 @@ button, a, [role="button"] {
   .touch-active-toggle:active {
     opacity: 0.6;
   }
+}
+
+/* ── Hide scrollbars on horizontal chip rows / drawers ── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

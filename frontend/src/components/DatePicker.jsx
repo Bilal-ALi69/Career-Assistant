@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
@@ -107,15 +108,31 @@ export default function DatePicker({ value, onChange, dark, tokens, placeholder 
         />
       </button>
 
-      {open && (
-        <div
-          className={cx(
-            "absolute z-50 mt-1.5 w-[280px] rounded-xl border p-3 animate-drop-in",
-            dark
-              ? "bg-[#2f2f2e] border-zinc-700/80 shadow-xl shadow-black/40"
-              : "bg-[#f8fafc] border-[#e2e8f0] shadow-xl shadow-black/10"
-          )}
-        >
+      {open &&
+        createPortal(
+          <>
+            <div
+              className={cx("md:hidden fixed inset-0 z-[100]", dark ? "bg-black/60" : "bg-black/40")}
+              onMouseDown={close}
+            />
+            <div
+              onMouseDown={(e) => e.stopPropagation()}
+              className={cx(
+                "fixed md:absolute bottom-0 md:bottom-auto inset-x-0 md:inset-x-auto w-full md:w-[280px]",
+                "z-[100] md:z-50 mt-0 md:mt-1.5 rounded-t-2xl md:rounded-xl border p-3",
+                "animate-sheet-in md:animate-drop-in shadow-2xl md:shadow-xl",
+                dark
+                  ? "bg-[#2f2f2e] border-zinc-700/80 md:shadow-black/40"
+                  : "bg-[#f8fafc] border-[#e2e8f0] md:shadow-black/10"
+              )}
+              style={{ paddingBottom: "max(env(safe-area-inset-bottom), 1rem)" }}
+            >
+              <div className="md:hidden">
+                <div className="mx-auto mt-1 mb-3 h-1 w-10 rounded-full bg-current opacity-20" />
+                <p className={cx("mb-3 px-1 text-xs font-semibold", tokens.textMuted)}>
+                  {displayLabel ? `Edit ${displayLabel}` : placeholder}
+                </p>
+              </div>
           {/* ── Month picker grid ── */}
           {headerView === "month" && (
             <div>
@@ -307,8 +324,10 @@ export default function DatePicker({ value, onChange, dark, tokens, placeholder 
               </button>
             </>
           )}
-        </div>
-      )}
+            </div>
+          </>,
+          document.body
+        )}
     </div>
   );
 }

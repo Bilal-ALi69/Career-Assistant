@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
@@ -108,44 +109,92 @@ export default function CustomSelect({
       </button>
 
       {open && (
-        <ul
-          ref={listRef}
-          className={cx(
-            "absolute z-50 mt-1.5 w-full rounded-xl border overflow-y-auto py-1 max-h-[240px]",
-            "animate-drop-in",
-            dark
-              ? "bg-[#2f2f2e] border-zinc-700/80 shadow-xl shadow-black/40"
-              : "bg-[#f8fafc] border-[#e2e8f0] shadow-xl shadow-black/10"
+        <>
+          <ul
+            ref={listRef}
+            className={cx(
+              "hidden md:block absolute z-50 mt-1.5 w-full rounded-xl border overflow-y-auto py-1 max-h-[240px]",
+              "animate-drop-in",
+              dark
+                ? "bg-[#2f2f2e] border-zinc-700/80 shadow-xl shadow-black/40"
+                : "bg-[#f8fafc] border-[#e2e8f0] shadow-xl shadow-black/10"
+            )}
+          >
+            {options.map((opt, i) => {
+              const val = typeof opt === "object" ? opt.value : opt;
+              const lbl = typeof opt === "object" ? opt.label : opt;
+              const isSelected = val === value;
+              const isHighlighted = i === highlighted;
+              return (
+                <li key={val}>
+                  <button
+                    type="button"
+                    onClick={() => select(opt)}
+                    onMouseEnter={() => setHighlighted(i)}
+                    className={cx(
+                      "w-full text-left px-3 py-2 text-sm transition-colors",
+                      isSelected
+                        ? dark
+                          ? "text-[var(--accent-400)] font-medium"
+                          : "text-[var(--accent-600)] font-medium"
+                        : tokens.text,
+                      isHighlighted && !isSelected && (dark ? "bg-white/5" : "bg-[#f1f5f9]"),
+                      !isHighlighted && !isSelected && "bg-transparent"
+                    )}
+                  >
+                    {lbl}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {createPortal(
+            <div className="md:hidden fixed inset-0 z-[100]" onMouseDown={close}>
+              <div
+                className={cx("absolute inset-0", dark ? "bg-black/60" : "bg-black/40")}
+                onClick={close}
+              />
+              <div
+                onMouseDown={(e) => e.stopPropagation()}
+                className={cx(
+                  "absolute bottom-0 left-0 right-0 z-[100] rounded-t-2xl border-t shadow-2xl animate-sheet-in",
+                  dark ? "bg-[#2f2f2e] border-zinc-700/80" : "bg-[#f8fafc] border-[#e2e8f0]"
+                )}
+                style={{ paddingBottom: "max(env(safe-area-inset-bottom), 1rem)" }}
+              >
+                <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-current opacity-20" />
+                <p className={cx("px-5 pt-3 text-xs font-semibold", tokens.textMuted)}>
+                  {label || placeholder}
+                </p>
+                <div className="mt-1 max-h-[50vh] overflow-y-auto pb-2">
+                  {options.map((opt) => {
+                    const val = typeof opt === "object" ? opt.value : opt;
+                    const lbl = typeof opt === "object" ? opt.label : opt;
+                    const isSelected = val === value;
+                    return (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => select(opt)}
+                        className={cx(
+                          "w-full text-left px-5 py-3.5 text-sm transition-colors",
+                          isSelected
+                            ? dark
+                              ? "text-[var(--accent-400)] font-medium"
+                              : "text-[var(--accent-600)] font-medium"
+                            : tokens.text
+                        )}
+                      >
+                        {lbl}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>,
+            document.body
           )}
-        >
-          {options.map((opt, i) => {
-            const val = typeof opt === "object" ? opt.value : opt;
-            const lbl = typeof opt === "object" ? opt.label : opt;
-            const isSelected = val === value;
-            const isHighlighted = i === highlighted;
-            return (
-              <li key={val}>
-                <button
-                  type="button"
-                  onClick={() => select(opt)}
-                  onMouseEnter={() => setHighlighted(i)}
-                  className={cx(
-                    "w-full text-left px-3 py-2 text-sm transition-colors",
-                    isSelected
-                      ? dark
-                        ? "text-[var(--accent-400)] font-medium"
-                        : "text-[var(--accent-600)] font-medium"
-                      : tokens.text,
-                    isHighlighted && !isSelected && (dark ? "bg-white/5" : "bg-[#f1f5f9]"),
-                    !isHighlighted && !isSelected && "bg-transparent"
-                  )}
-                >
-                  {lbl}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        </>
       )}
     </div>
   );

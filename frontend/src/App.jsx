@@ -5,8 +5,9 @@ import {
   Accessibility, Check, CheckCircle2, Circle, Shield, SlidersHorizontal,
   Activity, Pencil, Download, Trash2, ChevronDown,
   LogOut, ArrowDown, Loader2, Brain, Target, Languages as LanguagesIcon,
-  XCircle, Save, Sunrise, Sunset, Clock, RefreshCw,
+  XCircle, Save, Sunrise, Sunset, Clock, RefreshCw, Menu, X,
 } from "lucide-react";
+import { createPortal } from "react-dom";
 import { API_BASE, ApiError, login, register, getAccount, deleteAccount, getProfile, updateProfile, fetchRecommendations, fetchRegeneratedRecommendations, cancelRecommendation, fetchWorkdaySummary } from "./lib/api";
 import { PROFILE_FIELD_GROUPS } from "./lib/profileFields";
 import { loadSavedJobs, persistSavedJobs, jobId } from "./lib/savedJobs";
@@ -46,6 +47,15 @@ const JOBS = [
 ];
 
 const SKILLS_TABS = ["Overview", "Professional", "Preferences", "Personality", "Goals", "Other Info"];
+
+const SKILLS_TAB_ICONS = {
+  Overview: BarChart3,
+  Professional: Briefcase,
+  Preferences: SlidersHorizontal,
+  Personality: Brain,
+  Goals: Target,
+  "Other Info": BookOpen,
+};
 
 // Signed-out visitors get the 3-field teaser below. Once signed in, the
 // gate is unlocked (per SIGNIN_ITEMS' "Unlock full profile analysis") and
@@ -1915,6 +1925,14 @@ function ProfileSectionForm({ tokens, dark, group, profile, onSave, onGetSuggest
 
 function SkillsTraitsPage({ dark, tokens, signedIn, openAuth, profile, onSaveProfile, onGetSuggestions }) {
   const [tab, setTab] = useState("Overview");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [drawerOpen]);
 
   if (!signedIn) {
     return <GatedCard dark={dark} tokens={tokens} icon={BarChart3} title="Sign in to manage your skills"
@@ -1923,10 +1941,11 @@ function SkillsTraitsPage({ dark, tokens, signedIn, openAuth, profile, onSavePro
   }
 
   const activeGroup = PROFILE_FIELD_GROUPS.find((g) => g.tab === tab);
+  const goTo = (t) => { setTab(t); setDrawerOpen(false); };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10 grid md:grid-cols-[200px_1fr] gap-8">
-      <aside className="space-y-1">
+    <div className="max-w-6xl mx-auto px-6 py-10 md:grid md:grid-cols-[200px_1fr] md:gap-8">
+      <aside className="hidden md:block space-y-1">
         {SKILLS_TABS.map((t) => (
           <button
             key={t}
@@ -1941,6 +1960,46 @@ function SkillsTraitsPage({ dark, tokens, signedIn, openAuth, profile, onSavePro
         ))}
       </aside>
       <div>
+        {/* Mobile: horizontal chip bar + drawer toggle */}
+        <div className="md:hidden mb-5">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Browse skill categories"
+              onClick={() => setDrawerOpen(true)}
+              className={cx(
+                "shrink-0 h-10 w-10 rounded-xl border flex items-center justify-center transition-colors touch-active-ghost",
+                dark ? "bg-[#2f2f2e] border-zinc-700/80 text-slate-300" : "bg-white border-[#e2e8f0] text-slate-600"
+              )}
+            >
+              <Menu size={18} />
+            </button>
+            <div className="flex-1 overflow-x-auto no-scrollbar flex items-center gap-2 py-0.5">
+              {SKILLS_TABS.map((t) => {
+                const Icon = SKILLS_TAB_ICONS[t];
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTab(t)}
+                    className={cx(
+                      "shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-[13px] font-medium transition-colors touch-active-ghost",
+                      tab === t
+                        ? "bg-[var(--accent-600)] text-white shadow-sm"
+                        : dark
+                          ? "bg-[#2f2f2e] border border-zinc-700/60 text-slate-400"
+                          : "bg-[#f1f5f9] border border-[#e2e8f0] text-slate-600"
+                    )}
+                  >
+                    {Icon && <Icon size={14} />}
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
         {tab === "Overview" && (() => {
           const { filled, total, pct } = profileCompletion(profile);
           return (
@@ -1982,6 +2041,62 @@ function SkillsTraitsPage({ dark, tokens, signedIn, openAuth, profile, onSavePro
           </div>
         )}
       </div>
+
+      {/* Mobile: left slide-out drawer */}
+      {drawerOpen && createPortal(
+        <div className="md:hidden">
+          <div
+            className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-overlay-in"
+            onMouseDown={() => setDrawerOpen(false)}
+          />
+          <aside
+            className="fixed inset-y-0 left-0 z-[70] w-72 max-w-[80vw] shadow-2xl animate-drawer-in flex flex-col"
+            style={{
+              background: dark ? "#2f2f2e" : "#ffffff",
+              borderRight: dark ? "1px solid rgba(63,63,70,0.8)" : "1px solid #e2e8f0",
+            }}
+          >
+            <div
+              className="flex items-center justify-between gap-3 px-5 pb-3"
+              style={{ paddingTop: "max(env(safe-area-inset-top), 1.25rem)" }}
+            >
+              <h2 className={cx("text-sm font-bold", tokens.text)}>Skill Categories</h2>
+              <button
+                type="button"
+                aria-label="Close menu"
+                onClick={() => setDrawerOpen(false)}
+                className={cx("h-8 w-8 rounded-lg flex items-center justify-center transition-colors", tokens.hover, tokens.textMuted)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <nav className="flex-1 overflow-y-auto px-3 no-scrollbar" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 1.5rem)" }}>
+              {SKILLS_TABS.map((t) => {
+                const Icon = SKILLS_TAB_ICONS[t];
+                const isActive = tab === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => goTo(t)}
+                    className={cx(
+                      "w-full flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-colors mb-1 touch-active-ghost",
+                      isActive ? "bg-[var(--accent-600)] text-white" : cx(tokens.text, tokens.hover)
+                    )}
+                  >
+                    <span className="inline-flex items-center gap-3 min-w-0">
+                      {Icon && <Icon size={17} className={cx("shrink-0", isActive ? "text-white" : tokens.textMuted)} />}
+                      <span className="truncate">{t}</span>
+                    </span>
+                    {isActive && <Check size={15} className="shrink-0" />}
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
