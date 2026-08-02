@@ -66,6 +66,29 @@ const PERSONALITY_GROUP = PROFILE_FIELD_GROUPS.find((g) => g.key === "personalit
 const GOALS_GROUP = PROFILE_FIELD_GROUPS.find((g) => g.key === "goals");
 const SIGNED_IN_HOME_FIELDS = [...PERSONALITY_GROUP.fields, ...GOALS_GROUP.fields];
 
+// Exactly the fields the recommendation endpoints accept. Shared by the
+// Skills flow and the post-survey redirect so both send the same payload
+// (no PII like full_name / phone_number is forwarded to the recommender).
+const RECOMMENDATION_FIELDS = new Set([
+  "strengths", "weaknesses", "interests",
+  "hobbies", "disabilities", "country", "education", "qualifications",
+  "work_experience", "medical_conditions", "preferred_work_environments",
+  "work_preference", "weekly_availability", "career_goals",
+  "background_constraints",
+  "date_of_birth", "gender", "current_address", "languages",
+  "linkedin_url", "portfolio_url", "preferred_industries",
+  "extracurriculars", "willing_to_relocate", "salary_expectations",
+  "notice_period", "values", "work_authorization",
+]);
+
+function pickRecommendationFields(source) {
+  const picked = {};
+  for (const [k, v] of Object.entries(source || {})) {
+    if (RECOMMENDATION_FIELDS.has(k) && v && String(v).trim()) picked[k] = String(v).trim();
+  }
+  return picked;
+}
+
 /* ---------------------------------------------------------
    THEME TOKENS
 --------------------------------------------------------- */
@@ -2512,7 +2535,7 @@ export default function CareerAssistantApp() {
       saveLocalProfile(email, data);
       setProfile((p) => ({ ...(p || {}), ...data }));
       setShowSurvey(false);
-      goAnalyze(data);
+      goAnalyze(pickRecommendationFields(data));
     } catch (err) {
       setSurveyError(err.message || "Couldn't save your answers. You can finish this later from Skills & Traits.");
     } finally {
@@ -2593,23 +2616,8 @@ export default function CareerAssistantApp() {
       )}
       {page === "skills" && (
         <div key="page-skills" className="animate-page-enter grow">
-          <SkillsTraitsPage dark={dark} tokens={tokens} signedIn={signedIn} openAuth={openAuth} profile={profile} onSaveProfile={saveProfilePatch} onGetSuggestions={(values) => {
-          const recFields = new Set([
-            "strengths", "weaknesses", "interests",
-            "hobbies", "disabilities", "country", "education", "qualifications",
-            "work_experience", "medical_conditions", "preferred_work_environments",
-            "work_preference", "weekly_availability", "career_goals",
-            "background_constraints",
-            "date_of_birth", "gender", "current_address", "languages",
-            "linkedin_url", "portfolio_url", "preferred_industries",
-            "extracurriculars", "willing_to_relocate", "salary_expectations",
-            "notice_period", "values", "work_authorization",
-          ]);
-          const filtered = {};
-          for (const [k, v] of Object.entries({ ...profile, ...values })) {
-            if (recFields.has(k) && v && String(v).trim()) filtered[k] = String(v).trim();
-          }
-          goAnalyze(filtered);
+          <SkillsTraitsPage dark={dark} tokens={tokens} signedIn={signedIn} openAuth={openAuth} profile={profile} onSaveProfile={saveProfilePatch}             onGetSuggestions={(values) => {
+          goAnalyze(pickRecommendationFields({ ...profile, ...values }));
         }} />
         </div>
       )}

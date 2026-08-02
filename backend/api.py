@@ -290,6 +290,14 @@ class PersonalizedRecommendationRequest(RecommendationRequest):
     notice_period: ProfileText = ""
     values: ProfileText = ""
     work_authorization: ProfileText = ""
+    # Kept so the full profile-survey payload is always accepted here too,
+    # matching ProfileSurveyRequest. They are not merged into the saved
+    # profile unless actually sent in this request.
+    full_name: ProfileText = ""
+    phone_number: ProfileText = ""
+    accent_color: ProfileText = "gold"
+    education_level: ProfileText = ""
+    location: ProfileText = ""
 
     def submitted_profile_fields(self) -> dict[str, str]:
         profile_fields = set(accounts.PROFILE_SURVEY_FIELDS)
