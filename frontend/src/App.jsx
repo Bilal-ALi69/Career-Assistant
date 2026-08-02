@@ -1935,6 +1935,10 @@ function SkillsTraitsPage({ dark, tokens, signedIn, openAuth, profile, onSavePro
     return () => { document.body.style.overflow = prev; };
   }, [drawerOpen]);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [tab]);
+
   if (!signedIn) {
     return <GatedCard dark={dark} tokens={tokens} icon={BarChart3} title="Sign in to manage your skills"
       subtitle="Build your skillset, get AI insights and improve your career recommendations."
@@ -2342,6 +2346,10 @@ export default function CareerAssistantApp() {
   const [showReEnterModal, setShowReEnterModal] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
   const [surveySubmitting, setSurveySubmitting] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [page]);
   const [surveyError, setSurveyError] = useState("");
   const [formValues, setFormValues] = useState(() => {
     try { return JSON.parse(sessionStorage.getItem("career_formValues")); } catch { return null; }
